@@ -1,11 +1,14 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
+import Api
+import Api.TrackedItemList
 import Components.Input.Text
 import Components.TrackedItem
 import Effect exposing (Effect)
 import Html exposing (Html)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
+import Http
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
@@ -28,7 +31,7 @@ page shared route =
 
 
 type alias Model =
-    { trackedItems : List TrackedItem
+    { trackedItems : Api.Data (List TrackedItem)
     , newTrackedItemName : String
     , newTrackedItemDescription : String
     , newTrackedItemPurchase : Maybe Purchase
@@ -37,15 +40,12 @@ type alias Model =
 
 init : () -> ( Model, Effect Msg )
 init () =
-    ( { trackedItems =
-            [ TrackedItem "First" "Description" []
-            , TrackedItem "Second" "Description" []
-            ]
+    ( { trackedItems = Api.Loading
       , newTrackedItemName = ""
       , newTrackedItemDescription = ""
       , newTrackedItemPurchase = Nothing
       }
-    , Effect.none
+    , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
 
 
@@ -57,6 +57,7 @@ type Msg
     = NewTrackedItemNameUpdated String
     | NewTrackedItemDescriptionUpdated String
     | NewTrackedItemSubmitted
+    | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
 
 
 update : Msg -> Model -> ( Model, Effect Msg )
@@ -74,6 +75,16 @@ update msg model =
 
         NewTrackedItemSubmitted ->
             ( model
+            , Effect.none
+            )
+
+        TrackedItemApiResponded (Ok listOfTrackedItems) ->
+            ( { model | trackedItems = Api.Success listOfTrackedItems }
+            , Effect.none
+            )
+
+        TrackedItemApiResponded (Err httpError) ->
+            ( { model | trackedItems = Api.Failure httpError }
             , Effect.none
             )
 
@@ -99,7 +110,17 @@ view model =
             [ class "p-5"
             , style "width" "inherit"
             ]
-            [ Html.div [ class "flex place-content-around" ] [ viewTrackedItems model.trackedItems ]
+            [ Html.div [ class "flex place-content-around" ]
+                [ case model.trackedItems of
+                    Api.Loading ->
+                        Html.text "Loading tracked items..."
+
+                    Api.Success trackedItems ->
+                        viewTrackedItems trackedItems
+
+                    Api.Failure httpError ->
+                        Html.text "Something went wrong retrieving the tracked items"
+                ]
             , viewCreateTrackedItemForm
             ]
         ]
