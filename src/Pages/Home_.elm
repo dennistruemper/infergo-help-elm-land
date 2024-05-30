@@ -1,6 +1,7 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Api
+import Api.TrackedItem
 import Api.TrackedItemList
 import Components.Input.Text
 import Components.TrackedItem
@@ -57,6 +58,7 @@ type Msg
     = NewTrackedItemNameUpdated String
     | NewTrackedItemDescriptionUpdated String
     | NewTrackedItemSubmitted
+    | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
 
 
@@ -75,7 +77,7 @@ update msg model =
 
         NewTrackedItemSubmitted ->
             ( model
-            , Effect.none
+            , Api.TrackedItem.create { onResponse = TrackedItemCreated, name = model.newTrackedItemName, description = model.newTrackedItemDescription }
             )
 
         TrackedItemApiResponded (Ok listOfTrackedItems) ->
@@ -85,6 +87,16 @@ update msg model =
 
         TrackedItemApiResponded (Err httpError) ->
             ( { model | trackedItems = Api.Failure httpError }
+            , Effect.none
+            )
+
+        TrackedItemCreated (Ok s) ->
+            ( model
+            , Effect.none
+            )
+
+        TrackedItemCreated (Err httpError) ->
+            ( model
             , Effect.none
             )
 
