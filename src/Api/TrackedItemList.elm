@@ -2,7 +2,8 @@ module Api.TrackedItemList exposing (getAll)
 
 import Effect exposing (Effect)
 import Http
-import Json.Decode
+import Json.Decode as Decode exposing (Decoder, int, list, null, oneOf, string, succeed)
+import Json.Decode.Pipeline exposing (optional, required)
 import Shared.Model exposing (Purchase, TrackedItem)
 
 
@@ -19,23 +20,23 @@ getAll options =
     Effect.sendCmd cmd
 
 
-decoder : Json.Decode.Decoder (List TrackedItem)
+decoder : Decoder (List TrackedItem)
 decoder =
-    Json.Decode.list trackedItemDecoder
+    list trackedItemDecoder
 
 
-trackedItemDecoder : Json.Decode.Decoder TrackedItem
+trackedItemDecoder : Decoder TrackedItem
 trackedItemDecoder =
-    Json.Decode.map3 TrackedItem
-        (Json.Decode.field "name" Json.Decode.string)
-        (Json.Decode.field "product_description" Json.Decode.string)
-        (Json.Decode.list purchaseDecoder)
+    succeed TrackedItem
+        |> required "name" string
+        |> required "product_description" string
+        |> optional "purchases" (list purchaseDecoder) []
 
 
-purchaseDecoder : Json.Decode.Decoder Purchase
+purchaseDecoder : Decoder Purchase
 purchaseDecoder =
-    Json.Decode.map4 Purchase
-        (Json.Decode.field "purchased_date" Json.Decode.string)
-        (Json.Decode.field "purchased_amount" Json.Decode.int)
-        (Json.Decode.field "price" Json.Decode.int)
-        (Json.Decode.field "interval_to_previous" Json.Decode.int)
+    succeed Purchase
+        |> required "purchased_date" string
+        |> required "purchased_amount" int
+        |> required "price" int
+        |> required "interval_to_previous" int

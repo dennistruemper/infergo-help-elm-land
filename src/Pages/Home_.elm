@@ -92,7 +92,7 @@ update msg model =
 
         TrackedItemCreated (Ok s) ->
             ( model
-            , Effect.none
+            , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
             )
 
         TrackedItemCreated (Err httpError) ->
