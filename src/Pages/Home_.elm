@@ -122,18 +122,20 @@ view model =
             [ class "p-5"
             , style "width" "inherit"
             ]
-            [ Html.div [ class "flex place-content-around" ]
-                [ case model.trackedItems of
-                    Api.Loading ->
-                        Html.text "Loading tracked items..."
+            [ Html.div [ class "grid grid-cols-2" ]
+                [ Html.div [ class "flex place-content-around" ]
+                    [ case model.trackedItems of
+                        Api.Loading ->
+                            Html.text "Loading tracked items..."
 
-                    Api.Success trackedItems ->
-                        viewTrackedItems trackedItems
+                        Api.Success trackedItems ->
+                            viewTrackedItems trackedItems
 
-                    Api.Failure httpError ->
-                        Html.text "Something went wrong retrieving the tracked items"
+                        Api.Failure httpError ->
+                            Html.text "Something went wrong retrieving the tracked items"
+                    ]
+                , viewCreateTrackedItemForm
                 ]
-            , viewCreateTrackedItemForm
             ]
         ]
     }
@@ -142,8 +144,10 @@ view model =
 viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
 viewTrackedItems ts =
     Html.div
-        [ class "border flex has-text-centered " ]
-        [ Html.ul [ class "list text-center" ] (List.map Components.TrackedItem.view ts) ]
+        [ class "flex has-text-centered flex-col" ]
+        [ Html.h1 [ class "" ] [ Html.text "Overview" ]
+        , Html.div [ class "text-center" ] (List.map Components.TrackedItem.view ts)
+        ]
 
 
 viewCreateTrackedItemForm : Html Msg
