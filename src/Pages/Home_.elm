@@ -144,9 +144,9 @@ view model =
 viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
 viewTrackedItems ts =
     Html.div
-        [ class "flex has-text-centered flex-col" ]
+        [ class "flex flex-col" ]
         [ Html.h1 [ class "" ] [ Html.text "Overview" ]
-        , Html.div [ class "text-center" ] (List.map Components.TrackedItem.view ts)
+        , Html.div [ class "" ] (List.map Components.TrackedItem.view ts)
         ]
 
 

@@ -7,7 +7,7 @@ import Shared.Model exposing (Purchase, TrackedItem)
 
 view : TrackedItem -> Html msg
 view t =
-    Html.div [ class "flex min-h-4" ]
+    Html.div [ class "flex flex-col min-h-4 border" ]
         [ Html.span [ class "w-auto" ]
             [ Html.p [] [ Html.text ("Name: " ++ t.name ++ "| Description: " ++ t.product_description) ] ]
         , Html.p [] (List.map viewPurchase t.purchases)
