@@ -35,7 +35,9 @@ type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
     , newTrackedItemName : String
     , newTrackedItemDescription : String
-    , newTrackedItemPurchase : Maybe Purchase
+    , newTrackedItemPurchasedDate : String
+    , newTrackedItemPurchasedAmount : Int
+    , newTrackedItemPrice : Int
     }
 
 
@@ -44,7 +46,9 @@ init () =
     ( { trackedItems = Api.Loading
       , newTrackedItemName = ""
       , newTrackedItemDescription = ""
-      , newTrackedItemPurchase = Nothing
+      , newTrackedItemPurchasedDate = ""
+      , newTrackedItemPurchasedAmount = 0
+      , newTrackedItemPrice = 0
       }
     , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
@@ -57,6 +61,9 @@ init () =
 type Msg
     = NewTrackedItemNameUpdated String
     | NewTrackedItemDescriptionUpdated String
+    | NewTrackedItemPurchasedDateUpdated String
+    | NewTrackedItemPurchasedAmountUpdated String
+    | NewTrackedItemPriceUpdated String
     | NewTrackedItemSubmitted
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
@@ -75,9 +82,38 @@ update msg model =
             , Effect.none
             )
 
+        NewTrackedItemPurchasedDateUpdated s ->
+            ( { model | newTrackedItemPurchasedDate = s }
+            , Effect.none
+            )
+
+        NewTrackedItemPurchasedAmountUpdated s ->
+            ( { model | newTrackedItemPurchasedAmount = Maybe.withDefault 0 (String.toInt s) }
+            , Effect.none
+            )
+
+        NewTrackedItemPriceUpdated s ->
+            ( { model | newTrackedItemPrice = Maybe.withDefault 0 (String.toInt s) }
+            , Effect.none
+            )
+
         NewTrackedItemSubmitted ->
             ( model
-            , Api.TrackedItem.create { onResponse = TrackedItemCreated, name = model.newTrackedItemName, description = model.newTrackedItemDescription }
+            , Api.TrackedItem.create
+                { onResponse = TrackedItemCreated
+                , name = model.newTrackedItemName
+                , description = model.newTrackedItemDescription
+                , purchase =
+                    case model.newTrackedItemPurchasedDate of
+                        _ ->
+                            Just
+                                (Shared.Model.Purchase
+                                    model.newTrackedItemPurchasedDate
+                                    model.newTrackedItemPurchasedAmount
+                                    model.newTrackedItemPrice
+                                    0
+                                )
+                }
             )
 
         TrackedItemApiResponded (Ok listOfTrackedItems) ->
@@ -157,14 +193,29 @@ viewCreateTrackedItemForm =
         [ Html.div []
             [ Html.h1 [ class "h1" ] [ Html.text "Create new tracked item" ]
             , Components.Input.Text.view
-                { label = "Tracked Item Name"
-                , placeholder = "Tracked Item Name"
+                { label = "Name"
+                , placeholder = "Name"
                 , onInput = NewTrackedItemNameUpdated
                 }
             , Components.Input.Text.view
-                { label = "Tracked Item Description"
-                , placeholder = "Tracked Item Description"
+                { label = "Description"
+                , placeholder = "Description"
                 , onInput = NewTrackedItemDescriptionUpdated
+                }
+            , Components.Input.Text.view
+                { label = "Purchased Date"
+                , placeholder = "yyyy-mm-dd"
+                , onInput = NewTrackedItemPurchasedDateUpdated
+                }
+            , Components.Input.Text.view
+                { label = "Purchased Amount"
+                , placeholder = "1"
+                , onInput = NewTrackedItemPurchasedAmountUpdated
+                }
+            , Components.Input.Text.view
+                { label = "Price"
+                , placeholder = "1795"
+                , onInput = NewTrackedItemPriceUpdated
                 }
             , Html.button [ class "border button", onClick NewTrackedItemSubmitted ] [ Html.text "Submit" ]
             ]
