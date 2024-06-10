@@ -33,22 +33,22 @@ page shared route =
 
 type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
-    , newTrackedItemName : String
-    , newTrackedItemDescription : String
-    , newTrackedItemPurchasedDate : String
-    , newTrackedItemPurchasedAmount : Int
-    , newTrackedItemPrice : Int
+    , newItemName : String
+    , newDescription : String
+    , newPurchasedDate : String
+    , newPurchasedAmount : Int
+    , newPrice : Int
     }
 
 
 init : () -> ( Model, Effect Msg )
 init () =
     ( { trackedItems = Api.Loading
-      , newTrackedItemName = ""
-      , newTrackedItemDescription = ""
-      , newTrackedItemPurchasedDate = ""
-      , newTrackedItemPurchasedAmount = 0
-      , newTrackedItemPrice = 0
+      , newItemName = ""
+      , newDescription = ""
+      , newPurchasedDate = ""
+      , newPurchasedAmount = 0
+      , newPrice = 0
       }
     , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
@@ -59,11 +59,11 @@ init () =
 
 
 type Msg
-    = NewTrackedItemNameUpdated String
-    | NewTrackedItemDescriptionUpdated String
-    | NewTrackedItemPurchasedDateUpdated String
-    | NewTrackedItemPurchasedAmountUpdated String
-    | NewTrackedItemPriceUpdated String
+    = NewItemNameUpdated String
+    | NewDescriptionUpdated String
+    | NewPurchasedDateUpdated String
+    | NewPurchasedAmountUpdated String
+    | NewPriceUpdated String
     | NewTrackedItemSubmitted
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
@@ -72,28 +72,28 @@ type Msg
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
-        NewTrackedItemNameUpdated s ->
-            ( { model | newTrackedItemName = s }
+        NewItemNameUpdated s ->
+            ( { model | newItemName = s }
             , Effect.none
             )
 
-        NewTrackedItemDescriptionUpdated s ->
-            ( { model | newTrackedItemDescription = s }
+        NewDescriptionUpdated s ->
+            ( { model | newDescription = s }
             , Effect.none
             )
 
-        NewTrackedItemPurchasedDateUpdated s ->
-            ( { model | newTrackedItemPurchasedDate = s }
+        NewPurchasedDateUpdated s ->
+            ( { model | newPurchasedDate = s }
             , Effect.none
             )
 
-        NewTrackedItemPurchasedAmountUpdated s ->
-            ( { model | newTrackedItemPurchasedAmount = Maybe.withDefault 0 (String.toInt s) }
+        NewPurchasedAmountUpdated s ->
+            ( { model | newPurchasedAmount = Maybe.withDefault 0 (String.toInt s) }
             , Effect.none
             )
 
-        NewTrackedItemPriceUpdated s ->
-            ( { model | newTrackedItemPrice = Maybe.withDefault 0 (String.toInt s) }
+        NewPriceUpdated s ->
+            ( { model | newPrice = Maybe.withDefault 0 (String.toInt s) }
             , Effect.none
             )
 
@@ -101,16 +101,16 @@ update msg model =
             ( model
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
-                , name = model.newTrackedItemName
-                , description = model.newTrackedItemDescription
+                , name = model.newItemName
+                , description = model.newDescription
                 , purchase =
-                    case model.newTrackedItemPurchasedDate of
+                    case model.newPurchasedDate of
                         _ ->
                             Just
                                 (Shared.Model.Purchase
-                                    model.newTrackedItemPurchasedDate
-                                    model.newTrackedItemPurchasedAmount
-                                    model.newTrackedItemPrice
+                                    model.newPurchasedDate
+                                    model.newPurchasedAmount
+                                    model.newPrice
                                     0
                                 )
                 }
@@ -155,10 +155,8 @@ view model =
     { title = "Tracked Items"
     , body =
         [ Html.div
-            [ class "p-5"
-            , style "width" "inherit"
-            ]
-            [ Html.div [ class "grid grid-cols-2" ]
+            [ class "w-auto" ]
+            [ Html.div [ class "grid grid-cols-2 h-dvh" ]
                 [ Html.div [ class "flex place-content-around" ]
                     [ case model.trackedItems of
                         Api.Loading ->
@@ -180,42 +178,42 @@ view model =
 viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
 viewTrackedItems ts =
     Html.div
-        [ class "flex flex-col" ]
-        [ Html.h1 [ class "" ] [ Html.text "Overview" ]
-        , Html.div [ class "" ] (List.map Components.TrackedItem.view ts)
+        [ class "flex flex-col content-center place-content-center" ]
+        [ Html.h1 [] [ Html.text "Overview" ]
+        , Html.div [] (List.map Components.TrackedItem.view ts)
         ]
 
 
 viewCreateTrackedItemForm : Html Msg
 viewCreateTrackedItemForm =
     Html.div
-        [ class "flex place-content-around" ]
-        [ Html.div []
+        [ class "flex content-center place-content-around" ]
+        [ Html.div [ class "flex-col content-center" ]
             [ Html.h1 [ class "h1" ] [ Html.text "Create new tracked item" ]
             , Components.Input.Text.view
                 { label = "Name"
                 , placeholder = "Name"
-                , onInput = NewTrackedItemNameUpdated
+                , onInput = NewItemNameUpdated
                 }
             , Components.Input.Text.view
                 { label = "Description"
                 , placeholder = "Description"
-                , onInput = NewTrackedItemDescriptionUpdated
+                , onInput = NewDescriptionUpdated
                 }
             , Components.Input.Text.view
                 { label = "Purchased Date"
                 , placeholder = "yyyy-mm-dd"
-                , onInput = NewTrackedItemPurchasedDateUpdated
+                , onInput = NewPurchasedDateUpdated
                 }
             , Components.Input.Text.view
                 { label = "Purchased Amount"
                 , placeholder = "1"
-                , onInput = NewTrackedItemPurchasedAmountUpdated
+                , onInput = NewPurchasedAmountUpdated
                 }
             , Components.Input.Text.view
                 { label = "Price"
                 , placeholder = "1795"
-                , onInput = NewTrackedItemPriceUpdated
+                , onInput = NewPriceUpdated
                 }
             , Html.button [ class "border button", onClick NewTrackedItemSubmitted ] [ Html.text "Submit" ]
             ]
