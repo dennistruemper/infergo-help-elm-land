@@ -3,12 +3,12 @@ module Pages.Home_ exposing (Model, Msg, page)
 import Api
 import Api.TrackedItem
 import Api.TrackedItemList
-import Components.Input.Text
+import Components.Input
 import Components.TrackedItem
 import Effect exposing (Effect)
 import Html exposing (Html)
-import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (class, placeholder, style, type_)
+import Html.Events exposing (onClick, onInput)
 import Http
 import Page exposing (Page)
 import Route exposing (Route)
@@ -155,21 +155,19 @@ view model =
     { title = "Tracked Items"
     , body =
         [ Html.div
-            [ class "w-auto" ]
-            [ Html.div [ class "grid grid-cols-2 h-dvh" ]
-                [ Html.div [ class "flex place-content-around" ]
-                    [ case model.trackedItems of
-                        Api.Loading ->
-                            Html.text "Loading tracked items..."
+            [ class "is-full grid" ]
+            [ Html.div [ class "cell" ]
+                [ case model.trackedItems of
+                    Api.Loading ->
+                        Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Loading tracked items..." ]
 
-                        Api.Success trackedItems ->
-                            viewTrackedItems trackedItems
+                    Api.Success trackedItems ->
+                        viewTrackedItems trackedItems
 
-                        Api.Failure httpError ->
-                            Html.text "Something went wrong retrieving the tracked items"
-                    ]
-                , viewCreateTrackedItemForm
+                    Api.Failure httpError ->
+                        Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Something went wrong retrieving the tracked items" ]
                 ]
+            , viewCreateTrackedItemForm
             ]
         ]
     }
@@ -177,44 +175,45 @@ view model =
 
 viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
 viewTrackedItems ts =
-    Html.div
-        [ class "flex flex-col content-center place-content-center" ]
-        [ Html.h1 [] [ Html.text "Overview" ]
+    Html.div [ class "" ]
+        [ Html.h1 [ class "title is-1 has-text-centered" ] [ Html.text "Overview" ]
         , Html.div [] (List.map Components.TrackedItem.view ts)
         ]
 
 
 viewCreateTrackedItemForm : Html Msg
 viewCreateTrackedItemForm =
-    Html.div
-        [ class "flex content-center place-content-around" ]
-        [ Html.div [ class "flex-col content-center" ]
-            [ Html.h1 [ class "h1" ] [ Html.text "Create new tracked item" ]
-            , Components.Input.Text.view
-                { label = "Name"
-                , placeholder = "Name"
-                , onInput = NewItemNameUpdated
-                }
-            , Components.Input.Text.view
-                { label = "Description"
-                , placeholder = "Description"
-                , onInput = NewDescriptionUpdated
-                }
-            , Components.Input.Text.view
-                { label = "Purchased Date"
-                , placeholder = "yyyy-mm-dd"
-                , onInput = NewPurchasedDateUpdated
-                }
-            , Components.Input.Text.view
-                { label = "Purchased Amount"
-                , placeholder = "1"
-                , onInput = NewPurchasedAmountUpdated
-                }
-            , Components.Input.Text.view
-                { label = "Price"
-                , placeholder = "1795"
-                , onInput = NewPriceUpdated
-                }
-            , Html.button [ class "border button", onClick NewTrackedItemSubmitted ] [ Html.text "Submit" ]
-            ]
+    Html.div [ class "cell field" ]
+        [ Html.h1 [ class "title is-1 has-text-centered" ] [ Html.text "Create new tracked item" ]
+        , Components.Input.view
+            { label = "Name"
+            , placeholder = "Name"
+            , inputType = "text"
+            , onInput = NewItemNameUpdated
+            }
+        , Components.Input.view
+            { label = "Description"
+            , placeholder = "Description"
+            , inputType = "text"
+            , onInput = NewDescriptionUpdated
+            }
+        , Components.Input.view
+            { label = "Purchased Date"
+            , placeholder = "yyyy-mm-dd"
+            , inputType = "text"
+            , onInput = NewPurchasedDateUpdated
+            }
+        , Components.Input.view
+            { label = "Purchased Amount"
+            , placeholder = "1"
+            , inputType = "text"
+            , onInput = NewPurchasedAmountUpdated
+            }
+        , Components.Input.view
+            { label = "Price"
+            , placeholder = "1795"
+            , inputType = "text"
+            , onInput = NewPriceUpdated
+            }
+        , Html.div [ class "pl-6 pr-6" ] [ Html.button [ class "button", onClick NewTrackedItemSubmitted ] [ Html.text "Submit" ] ]
         ]
