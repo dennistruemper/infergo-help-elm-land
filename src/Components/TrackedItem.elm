@@ -1,4 +1,4 @@
-module Components.TrackedItem exposing (..)
+module Components.TrackedItem exposing (view)
 
 import Html exposing (Html)
 import Html.Attributes exposing (class)
@@ -7,6 +7,15 @@ import Shared.Model exposing (Purchase, TrackedItem)
 
 view : TrackedItem -> Html msg
 view t =
+    let
+        purchases : Html msg
+        purchases =
+            if List.isEmpty t.purchases then
+                Html.div [] [ Html.text "No purchases yet!" ]
+
+            else
+                Html.div [] (List.map viewPurchase t.purchases)
+    in
     Html.div [ class "pl-6 pr-6" ]
         [ Html.span [ class "is-full" ]
             [ Html.h5 [ class "title is-5" ] [ Html.text t.name ]
@@ -14,7 +23,7 @@ view t =
             ]
         , Html.span []
             [ Html.p [ class "pl-4" ] [ Html.text "Purchases" ]
-            , Html.div [] (List.map viewPurchase t.purchases)
+            , purchases
             ]
         ]
 
