@@ -1,7 +1,7 @@
 module Components.TrackedItem exposing (view)
 
 import Html exposing (Html)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, placeholder)
 import Shared.Model exposing (Purchase, TrackedItem)
 
 
@@ -11,20 +11,29 @@ view t =
         purchases : Html msg
         purchases =
             if List.isEmpty t.purchases then
-                Html.div [] [ Html.text "No purchases yet!" ]
+                Html.div [ class "is-flex is-justify-content-space-around" ] [ Html.text "No purchases yet!" ]
 
             else
-                Html.div [] (List.map viewPurchase t.purchases)
+                Html.div [ class "box" ]
+                    [ Html.div [ class "grid" ]
+                        [ Html.p [ class pHeaderClass ] [ Html.text "Date" ]
+                        , Html.p [ class pHeaderClass ] [ Html.text "Amount" ]
+                        , Html.p [ class pHeaderClass ] [ Html.text "Price" ]
+                        , Html.p [ class pHeaderClass ] [ Html.text "Interval to previous" ]
+                        ]
+                    , Html.div [] (List.map viewPurchase t.purchases)
+                    ]
+
+        pHeaderClass : String
+        pHeaderClass =
+            "cell has-text-weight-medium"
     in
-    Html.div [ class "pl-6 pr-6" ]
-        [ Html.span [ class "is-full" ]
+    Html.div [ class "box pl-6 pr-6" ]
+        [ Html.div [ class "is-full mb-2" ]
             [ Html.h5 [ class "title is-5" ] [ Html.text t.name ]
             , Html.h6 [ class "subtitle is-6 is-italic has-text-weight-medium" ] [ Html.text t.product_description ]
             ]
-        , Html.span []
-            [ Html.p [ class "pl-4" ] [ Html.text "Purchases" ]
-            , purchases
-            ]
+        , purchases
         ]
 
 
@@ -33,25 +42,25 @@ viewPurchase purchase =
     let
         divClass : String
         divClass =
-            "is-flex is-flex-direction-row is-justify-content-space-between"
+            "grid"
 
-        pClass : String
-        pClass =
-            "has-text-weight-medium"
+        pHeaderClass : String
+        pHeaderClass =
+            "cell has-text-weight-medium"
+
+        unitString : String
+        unitString =
+            if purchase.purchased_amount == 1 then
+                String.fromInt purchase.purchased_amount ++ " Unit"
+
+            else
+                String.fromInt purchase.purchased_amount ++ " Units"
     in
-    Html.div [ class "box" ]
-        [ Html.div [ class divClass ]
-            [ Html.p [ class pClass ] [ Html.text "Purchased date " ]
-            , Html.p [] [ Html.text purchase.purchased_date ]
-            ]
-        , Html.div [ class divClass ]
-            [ Html.p [ class pClass ] [ Html.text "Amount purchased" ]
-            , Html.p [] [ Html.text (String.fromInt purchase.purchased_amount) ]
-            ]
-        , Html.div [ class divClass ]
-            [ Html.p [ class pClass ] [ Html.text "Price paid" ]
-            , Html.p [] [ Html.text (viewPrice purchase.price) ]
-            ]
+    Html.div [ class divClass ]
+        [ Html.p [] [ Html.text purchase.purchased_date ]
+        , Html.p [] [ Html.text unitString ]
+        , Html.p [] [ Html.text (viewPrice purchase.price) ]
+        , Html.p [] [ Html.text (String.fromInt purchase.interval_to_previous) ]
         ]
 
 
