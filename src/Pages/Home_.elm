@@ -3,7 +3,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 import Api
 import Api.TrackedItem
 import Api.TrackedItemList
-import Components.Input
+import Components.PurchaseInput
 import Components.TrackedItem
 import Effect exposing (Effect)
 import Html exposing (Html)
@@ -33,6 +33,7 @@ page shared route =
 
 type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
+    , purchaseInput : Components.PurchaseInput.Model
     , newItemName : String
     , newDescription : String
     , newPurchasedDateYear : String
@@ -41,12 +42,14 @@ type alias Model =
     , newPurchasedAmount : Int
     , newPrice : Int
     , showCreateForm : Bool
+    , addPurchase : Bool
     }
 
 
 init : () -> ( Model, Effect Msg )
 init () =
     ( { trackedItems = Api.Loading
+      , purchaseInput = Components.PurchaseInput.init
       , newItemName = ""
       , newDescription = ""
       , newPurchasedDateYear = ""
@@ -55,6 +58,7 @@ init () =
       , newPurchasedAmount = 0
       , newPrice = 0
       , showCreateForm = False
+      , addPurchase = False
       }
     , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
@@ -72,9 +76,11 @@ type Msg
     | NewPurchasedDateDayUpdated String
     | NewPurchasedAmountUpdated String
     | NewPriceUpdated String
+    | AddPurchaseClicked
     | NewTrackedItemSubmitted
     | ClearNewTransactionForm
     | ShowCreateForm Bool
+    | PurchaseInputCompleted (Components.PurchaseInput.Msg Msg)
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
 
@@ -117,6 +123,11 @@ update msg model =
             , Effect.none
             )
 
+        AddPurchaseClicked ->
+            ( { model | addPurchase = True }
+            , Effect.none
+            )
+
         NewTrackedItemSubmitted ->
             ( { model | showCreateForm = False }
             , Api.TrackedItem.create
@@ -151,6 +162,7 @@ update msg model =
                 , newPurchasedAmount = 0
                 , newPrice = 0
                 , showCreateForm = False
+                , addPurchase = False
               }
             , Effect.none
             )
@@ -166,6 +178,14 @@ update msg model =
               }
             , Effect.none
             )
+
+        PurchaseInputCompleted innerMsg ->
+            Components.PurchaseInput.update
+                { msg = innerMsg
+                , model = model.purchaseInput
+                , toModel = \purchaseInput -> { model | purchaseInput = purchaseInput }
+                , toMsg = PurchaseInputCompleted
+                }
 
         TrackedItemApiResponded (Ok listOfTrackedItems) ->
             ( { model | trackedItems = Api.Success listOfTrackedItems }
@@ -221,7 +241,7 @@ view model =
                             Api.Failure httpError ->
                                 Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Something went wrong retrieving the tracked items" ]
                         ]
-                    , viewCreateTrackedItemForm model.showCreateForm
+                    , viewCreateTrackedItemForm model
                     , Html.div [ class "is-flex is-justify-content-center" ] [ viewShowCreateFormButton ]
                     ]
                 , Html.div [ class "cell" ] []
@@ -254,8 +274,8 @@ viewShowCreateFormButton =
     Html.button [ class "button is-primary is-medium is-fullwidth", onClick (ShowCreateForm False) ] [ Html.text "New Transaction" ]
 
 
-viewCreateTrackedItemForm : Bool -> Html Msg
-viewCreateTrackedItemForm showCreateForm =
+viewCreateTrackedItemForm : Model -> Html Msg
+viewCreateTrackedItemForm model =
     let
         divClass : String
         divClass =
@@ -265,86 +285,61 @@ viewCreateTrackedItemForm showCreateForm =
         pClass =
             "has-text-weight-medium"
     in
-    if showCreateForm == False then
+    if model.showCreateForm == False then
         Html.div [] []
 
     else
         Html.div [ class "box pl-6 pr-6" ]
-            [ Html.span [ class "is-full" ]
-                [ Html.h5 [ class "title is-5" ]
-                    [ Html.input
-                        [ class "input"
-                        , placeholder "Name"
-                        , type_ "text"
-                        , onInput NewItemNameUpdated
-                        ]
-                        []
+            [ Html.div [ class "is-full" ]
+                [ Html.div [ class "field" ]
+                    [ Html.label [ class "label" ] [ Html.text "Name" ]
+                    , Html.div [ class "control" ] [ Html.input [ class "input", placeholder "Shampoo", type_ "text", onInput NewItemNameUpdated ] [] ]
                     ]
-                , Html.h6 [ class "mt-2 subtitle is-6 is-italic has-text-weight-medium" ]
-                    [ Html.input
-                        [ class "input"
-                        , placeholder "Description"
-                        , type_ "text"
-                        , onInput NewDescriptionUpdated
-                        ]
-                        []
+                , Html.div [ class "field" ]
+                    [ Html.label [ class "label" ] [ Html.text "Description" ]
+                    , Html.div [ class "control" ] [ Html.input [ class "input", placeholder "Reuzel Daily Shampoo", type_ "text", onInput NewDescriptionUpdated ] [] ]
                     ]
-                , Html.div [ class divClass ]
-                    [ Html.p [ class pClass ] [ Html.text "Purchased year" ]
-                    , Html.div [ class "is-flex is-flex-direction-row" ]
-                        [ Html.p []
-                            [ Html.input
-                                [ class "input"
-                                , placeholder "YYYY"
-                                , type_ "text"
-                                , onInput NewPurchasedDateYearUpdated
-                                ]
-                                []
-                            ]
-                        , Html.p []
-                            [ Html.input
-                                [ class "input"
-                                , placeholder "MM"
-                                , type_ "text"
-                                , onInput NewPurchasedDateMonthUpdated
-                                ]
-                                []
-                            ]
-                        , Html.p []
-                            [ Html.input
-                                [ class "input"
-                                , placeholder "DD"
-                                , type_ "text"
-                                , onInput NewPurchasedDateDayUpdated
-                                ]
-                                []
-                            ]
+                , if model.addPurchase == True then
+                    Html.div [ class "field" ]
+                        [ Html.label [ class "label" ] [ Html.text "Purchases" ]
+                        , Components.PurchaseInput.new
+                            { model = model.purchaseInput
+                            , toMsg = PurchaseInputCompleted
+                            }
+                            |> Components.PurchaseInput.view
                         ]
-                    ]
-                , Html.div [ class divClass ]
-                    [ Html.p [ class pClass ] [ Html.text "Amount purchased" ]
-                    , Html.p []
-                        [ Html.input
-                            [ class "input"
-                            , placeholder "Amount"
-                            , type_ "text"
-                            , onInput NewPurchasedAmountUpdated
-                            ]
-                            []
-                        ]
-                    ]
-                , Html.div [ class divClass ]
-                    [ Html.p [ class pClass ] [ Html.text "Price paid" ]
-                    , Html.p []
-                        [ Html.input
-                            [ class "input"
-                            , placeholder "Price"
-                            , type_ "text"
-                            , onInput NewPriceUpdated
-                            ]
-                            []
-                        ]
-                    ]
+
+                  else
+                    Html.div [] []
+                , if model.addPurchase == False then
+                    Html.div [ class "field" ]
+                        [ Html.button [ class "button is-dark", onClick AddPurchaseClicked ] [ Html.text "Add purchase" ] ]
+
+                  else
+                    Html.div [] []
+
+                --, Html.div [ class divClass ]
+                --                    [ Html.p [ class pClass ] [ Html.text "Purchased year" ]
+                --                    , Html.div [ class "is-flex is-flex-direction-row" ]
+                --                        [ Html.p []
+                --                            [ Html.input [ class "input", placeholder "YYYY", type_ "text", onInput NewPurchasedDateYearUpdated ] [] ]
+                --                        , Html.p []
+                --                            [ Html.input [ class "input", placeholder "MM", type_ "text", onInput NewPurchasedDateMonthUpdated ] [] ]
+                --                        , Html.p []
+                --                            [ Html.input [ class "input", placeholder "DD", type_ "text", onInput NewPurchasedDateDayUpdated ] [] ]
+                --                        ]
+                --                    ]
+                --
+                --                , Html.div [ class divClass ]
+                --                    [ Html.p [ class pClass ] [ Html.text "Amount purchased" ]
+                --                    , Html.p []
+                --                        [ Html.input [ class "input", placeholder "Amount", type_ "text", onInput NewPurchasedAmountUpdated ] [] ]
+                --                    ]
+                --                , Html.div [ class divClass ]
+                --                    [ Html.p [ class pClass ] [ Html.text "Price paid" ]
+                --                    , Html.p []
+                --                        [ Html.input [ class "input", placeholder "Price", type_ "text", onInput NewPriceUpdated ] [] ]
+                --                    ]
                 , Html.div [ class "mt-2 is-flex is-justify-content-space-around" ]
                     [ Html.button [ class "button is-primary", onClick NewTrackedItemSubmitted ] [ Html.text "Save" ]
                     , Html.button [ class "button is-secondary", onClick ClearNewTransactionForm ] [ Html.text "Cancel" ]
