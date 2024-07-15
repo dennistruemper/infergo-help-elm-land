@@ -16,13 +16,13 @@ type alias Model =
 
 type alias TrackedItem =
     { name : String
-    , product_description : String
     , purchases : List Purchase
     }
 
 
 type alias Purchase =
-    { purchased_date : String
+    { product_description : String
+    , purchased_date : String
     , purchased_amount : Int
     , price : Int
     , interval_to_previous : Int

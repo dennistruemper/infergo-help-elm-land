@@ -17,7 +17,8 @@ view purchase =
                 String.fromInt purchase.purchased_amount ++ " Units"
     in
     Html.div [ class "grid" ]
-        [ Html.p [] [ Html.text purchase.purchased_date ]
+        [ Html.p [] [ Html.text purchase.product_description ]
+        , Html.p [] [ Html.text purchase.purchased_date ]
         , Html.p [] [ Html.text unitString ]
         , Html.p [] [ Html.text (viewPrice purchase.price) ]
         , Html.p [] [ Html.text (String.fromInt purchase.interval_to_previous) ]

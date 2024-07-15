@@ -43,6 +43,7 @@ type alias Model =
     , newPrice : Int
     , showCreateForm : Bool
     , addPurchase : Bool
+    , newPurchases : List Purchase
     }
 
 
@@ -59,6 +60,7 @@ init () =
       , newPrice = 0
       , showCreateForm = False
       , addPurchase = False
+      , newPurchases = []
       }
     , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
@@ -124,7 +126,10 @@ update msg model =
             )
 
         AddPurchaseClicked ->
-            ( { model | addPurchase = True }
+            ( { model
+                | addPurchase = True
+                , newPurchases = model.newPurchases ++ [ Purchase "" "" 0 0 0 ]
+              }
             , Effect.none
             )
 
@@ -133,12 +138,12 @@ update msg model =
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
                 , name = model.newItemName
-                , description = model.newDescription
                 , purchase =
                     case model.newPrice of
                         _ ->
                             Just
                                 (Shared.Model.Purchase
+                                    model.newDescription
                                     (model.newPurchasedDateYear
                                         ++ "-"
                                         ++ model.newPurchasedDateMonth
@@ -163,6 +168,7 @@ update msg model =
                 , newPrice = 0
                 , showCreateForm = False
                 , addPurchase = False
+                , newPurchases = []
               }
             , Effect.none
             )
@@ -295,31 +301,24 @@ viewCreateTrackedItemForm model =
                     [ Html.label [ class "label" ] [ Html.text "Name" ]
                     , Html.div [ class "control" ] [ Html.input [ class "input", placeholder "Shampoo", type_ "text", onInput NewItemNameUpdated ] [] ]
                     ]
-                , Html.div [ class "field" ]
-                    [ Html.label [ class "label" ] [ Html.text "Description" ]
-                    , Html.div [ class "control" ] [ Html.input [ class "input", placeholder "Reuzel Daily Shampoo", type_ "text", onInput NewDescriptionUpdated ] [] ]
-                    ]
-                , if model.addPurchase == True then
-                    Html.div [ class "field" ]
-                        [ Html.label [ class "label" ] [ Html.text "Purchases" ]
-                        , Components.PurchaseInput.new
-                            { model = model.purchaseInput
-                            , toMsg = PurchaseInputCompleted
-                            }
-                            |> Components.PurchaseInput.view
-                        ]
-
-                  else
-                    Html.div [] []
-                , if model.addPurchase == False then
-                    Html.div [ class "field" ]
-                        [ Html.button [ class "button is-dark", onClick AddPurchaseClicked ] [ Html.text "Add purchase" ] ]
-
-                  else
-                    Html.div [] []
+                , Html.label [ class "label" ] [ Html.text "Purchases" ]
+                , Html.div [] (List.map (showAddPurchase model.purchaseInput) model.newPurchases)
+                , Html.div [ class "field mt-2" ]
+                    [ Html.button [ class "button is-dark", onClick AddPurchaseClicked ] [ Html.text "Add purchase" ] ]
                 , Html.div [ class "mt-2 is-flex is-justify-content-space-around" ]
                     [ Html.button [ class "button is-primary", onClick NewTrackedItemSubmitted ] [ Html.text "Save" ]
                     , Html.button [ class "button is-secondary", onClick ClearNewTransactionForm ] [ Html.text "Cancel" ]
                     ]
                 ]
             ]
+
+
+showAddPurchase : Components.PurchaseInput.Model -> Purchase -> Html Msg
+showAddPurchase model purchase =
+    Html.div [ class "field" ]
+        [ Components.PurchaseInput.new
+            { model = model
+            , toMsg = PurchaseInputCompleted
+            }
+            |> Components.PurchaseInput.view
+        ]

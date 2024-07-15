@@ -145,7 +145,7 @@ back =
 
 createTrackedItem : { name : String, description : String } -> Effect msg
 createTrackedItem ti =
-    SendSharedMsg (Shared.Msg.TrackedItemCreated (TrackedItem ti.name ti.description []))
+    SendSharedMsg (Shared.Msg.TrackedItemCreated (TrackedItem ti.name []))
 
 
 

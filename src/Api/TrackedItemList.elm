@@ -29,13 +29,13 @@ trackedItemDecoder : Decoder TrackedItem
 trackedItemDecoder =
     succeed TrackedItem
         |> required "name" string
-        |> required "product_description" string
         |> optional "purchases" (list purchaseDecoder) []
 
 
 purchaseDecoder : Decoder Purchase
 purchaseDecoder =
     succeed Purchase
+        |> required "product_description" string
         |> required "purchased_date" string
         |> required "purchased_amount" int
         |> required "price" int
