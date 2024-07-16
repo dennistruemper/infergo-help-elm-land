@@ -3,7 +3,7 @@ module Components.PurchaseInput exposing (Model, Msg, PurchaseInput, init, new, 
 import Effect exposing (Effect)
 import Html exposing (Html)
 import Html.Attributes exposing (class, placeholder)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onClick)
 import Shared.Model exposing (Purchase)
 
 
@@ -15,6 +15,7 @@ type PurchaseInput msg
     = Settings
         { model : Model
         , toMsg : Msg msg -> msg
+        , onSave : Maybe msg
         }
 
 
@@ -27,6 +28,7 @@ new props =
     Settings
         { model = props.model
         , toMsg = props.toMsg
+        , onSave = Nothing
         }
 
 
@@ -68,7 +70,7 @@ type Msg msg
     | DayInputUpdated String
     | AmountInputUpdated String
     | PriceInputUpdated String
-    | InputCompleted
+    | InputCompleted { onSave : Maybe msg }
 
 
 update :
@@ -121,9 +123,14 @@ update props =
                 , Effect.none
                 )
 
-            InputCompleted ->
+            InputCompleted data ->
                 ( Model model
-                , Effect.sendMsg purchaseCompleted
+                , case data.onSave of
+                    Just onSave ->
+                        Effect.sendMsg onSave
+
+                    Nothing ->
+                        Effect.none
                 )
 
 
@@ -136,6 +143,16 @@ view (Settings settings) =
     let
         (Model model) =
             settings.model
+
+        onPurchaseSave : msg
+        onPurchaseSave =
+            settings.toMsg <|
+                case settings.onSave of
+                    Just onSave ->
+                        InputCompleted { onSave = Just onSave }
+
+                    Nothing ->
+                        InputCompleted { onSave = Nothing }
     in
     Html.div [ class "grid" ]
         [ Html.input [ class "input", placeholder "Product" ] []
@@ -144,4 +161,5 @@ view (Settings settings) =
         , Html.input [ class "input", placeholder "DD" ] []
         , Html.input [ class "input", placeholder "1" ] []
         , Html.input [ class "input", placeholder "1795" ] []
+        , Html.button [ class "button is-primary", onClick onPurchaseSave ] []
         ]
