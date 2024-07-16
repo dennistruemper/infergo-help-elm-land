@@ -36,7 +36,8 @@ new props =
 
 type Model
     = Model
-        { yearInput : String
+        { productInput : String
+        , yearInput : String
         , monthInput : String
         , dayInput : String
         , amountInput : String
@@ -47,7 +48,8 @@ type Model
 init : Model
 init =
     Model
-        { yearInput = ""
+        { productInput = ""
+        , yearInput = ""
         , monthInput = ""
         , dayInput = ""
         , amountInput = ""
@@ -60,11 +62,13 @@ init =
 
 
 type Msg msg
-    = YearInputUpdated String
+    = ProductInputUpdated String
+    | YearInputUpdated String
     | MonthInputUpdated String
     | DayInputUpdated String
     | AmountInputUpdated String
     | PriceInputUpdated String
+    | InputCompleted
 
 
 update :
@@ -87,6 +91,11 @@ update props =
     in
     toParentModel <|
         case props.msg of
+            ProductInputUpdated pi ->
+                ( Model { model | productInput = pi }
+                , Effect.none
+                )
+
             YearInputUpdated y ->
                 ( Model { model | yearInput = y }
                 , Effect.none
@@ -112,6 +121,11 @@ update props =
                 , Effect.none
                 )
 
+            InputCompleted ->
+                ( Model model
+                , Effect.sendMsg purchaseCompleted
+                )
+
 
 
 -- VIEW
@@ -124,7 +138,8 @@ view (Settings settings) =
             settings.model
     in
     Html.div [ class "grid" ]
-        [ Html.input [ class "input", placeholder "YYYY" ] []
+        [ Html.input [ class "input", placeholder "Product" ] []
+        , Html.input [ class "input", placeholder "YYYY" ] []
         , Html.input [ class "input", placeholder "MM" ] []
         , Html.input [ class "input", placeholder "DD" ] []
         , Html.input [ class "input", placeholder "1" ] []
