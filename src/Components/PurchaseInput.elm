@@ -3,7 +3,7 @@ module Components.PurchaseInput exposing (Model, Msg, PurchaseInput, init, new, 
 import Effect exposing (Effect)
 import Html exposing (Html)
 import Html.Attributes exposing (class, placeholder)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Shared.Model exposing (Purchase)
 
 
@@ -144,6 +144,30 @@ view (Settings settings) =
         (Model model) =
             settings.model
 
+        onProductInput : String -> msg
+        onProductInput value =
+            settings.toMsg (ProductInputUpdated value)
+
+        onYearInput : String -> msg
+        onYearInput value =
+            settings.toMsg (YearInputUpdated value)
+
+        onMonthInput : String -> msg
+        onMonthInput value =
+            settings.toMsg (MonthInputUpdated value)
+
+        onDayInput : String -> msg
+        onDayInput value =
+            settings.toMsg (DayInputUpdated value)
+
+        onAmountInput : String -> msg
+        onAmountInput value =
+            settings.toMsg (AmountInputUpdated value)
+
+        onPriceInput : String -> msg
+        onPriceInput value =
+            settings.toMsg (PriceInputUpdated value)
+
         onPurchaseSave : msg
         onPurchaseSave =
             settings.toMsg <|
@@ -155,11 +179,11 @@ view (Settings settings) =
                         InputCompleted { onSave = Nothing }
     in
     Html.div [ class "grid" ]
-        [ Html.input [ class "input", placeholder "Product" ] []
-        , Html.input [ class "input", placeholder "YYYY" ] []
-        , Html.input [ class "input", placeholder "MM" ] []
-        , Html.input [ class "input", placeholder "DD" ] []
-        , Html.input [ class "input", placeholder "1" ] []
-        , Html.input [ class "input", placeholder "1795" ] []
+        [ Html.input [ class "input", placeholder "Product", onInput onProductInput ] []
+        , Html.input [ class "input", placeholder "YYYY", onInput onYearInput ] []
+        , Html.input [ class "input", placeholder "MM", onInput onMonthInput ] []
+        , Html.input [ class "input", placeholder "DD", onInput onDayInput ] []
+        , Html.input [ class "input", placeholder "1", onInput onAmountInput ] []
+        , Html.input [ class "input", placeholder "1795", onInput onPriceInput ] []
         , Html.button [ class "button is-primary", onClick onPurchaseSave ] []
         ]
