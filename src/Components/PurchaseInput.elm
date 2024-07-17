@@ -70,7 +70,6 @@ type Msg msg
     | DayInputUpdated String
     | AmountInputUpdated String
     | PriceInputUpdated String
-    | InputCompleted { onSave : Maybe msg }
 
 
 update :
@@ -123,16 +122,6 @@ update props =
                 , Effect.none
                 )
 
-            InputCompleted data ->
-                ( Model model
-                , case data.onSave of
-                    Just onSave ->
-                        Effect.sendMsg onSave
-
-                    Nothing ->
-                        Effect.none
-                )
-
 
 
 -- VIEW
@@ -167,16 +156,6 @@ view (Settings settings) =
         onPriceInput : String -> msg
         onPriceInput value =
             settings.toMsg (PriceInputUpdated value)
-
-        onPurchaseSave : msg
-        onPurchaseSave =
-            settings.toMsg <|
-                case settings.onSave of
-                    Just onSave ->
-                        InputCompleted { onSave = Just onSave }
-
-                    Nothing ->
-                        InputCompleted { onSave = Nothing }
     in
     Html.div [ class "grid" ]
         [ Html.input [ class "input", placeholder "Product", onInput onProductInput ] []
@@ -185,5 +164,4 @@ view (Settings settings) =
         , Html.input [ class "input", placeholder "DD", onInput onDayInput ] []
         , Html.input [ class "input", placeholder "1", onInput onAmountInput ] []
         , Html.input [ class "input", placeholder "1795", onInput onPriceInput ] []
-        , Html.button [ class "button is-primary", onClick onPurchaseSave ] []
         ]

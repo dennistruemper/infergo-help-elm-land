@@ -7,7 +7,7 @@ import Components.PurchaseInput
 import Components.TrackedItem
 import Effect exposing (Effect)
 import Html exposing (Html)
-import Html.Attributes exposing (class, placeholder, style, type_)
+import Html.Attributes exposing (class, placeholder, type_)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Page exposing (Page)
@@ -35,12 +35,6 @@ type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
     , purchaseInput : Components.PurchaseInput.Model
     , newItemName : String
-    , newDescription : String
-    , newPurchasedDateYear : String
-    , newPurchasedDateMonth : String
-    , newPurchasedDateDay : String
-    , newPurchasedAmount : Int
-    , newPrice : Int
     , showCreateForm : Bool
     , addPurchase : Bool
     , newPurchases : List Purchase
@@ -52,12 +46,6 @@ init () =
     ( { trackedItems = Api.Loading
       , purchaseInput = Components.PurchaseInput.init
       , newItemName = ""
-      , newDescription = ""
-      , newPurchasedDateYear = ""
-      , newPurchasedDateMonth = ""
-      , newPurchasedDateDay = ""
-      , newPurchasedAmount = 0
-      , newPrice = 0
       , showCreateForm = False
       , addPurchase = False
       , newPurchases = []
@@ -72,16 +60,10 @@ init () =
 
 type Msg
     = NewItemNameUpdated String
-    | NewDescriptionUpdated String
-    | NewPurchasedDateYearUpdated String
-    | NewPurchasedDateMonthUpdated String
-    | NewPurchasedDateDayUpdated String
-    | NewPurchasedAmountUpdated String
-    | NewPriceUpdated String
     | AddPurchaseClicked
     | NewTrackedItemSubmitted
     | ClearNewTransactionForm
-    | ShowCreateForm Bool
+    | ShowCreateForm
     | PurchaseInputCompleted (Components.PurchaseInput.Msg Msg)
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
@@ -92,36 +74,6 @@ update msg model =
     case msg of
         NewItemNameUpdated s ->
             ( { model | newItemName = s }
-            , Effect.none
-            )
-
-        NewDescriptionUpdated s ->
-            ( { model | newDescription = s }
-            , Effect.none
-            )
-
-        NewPurchasedDateYearUpdated year ->
-            ( { model | newPurchasedDateYear = year }
-            , Effect.none
-            )
-
-        NewPurchasedDateMonthUpdated month ->
-            ( { model | newPurchasedDateMonth = month }
-            , Effect.none
-            )
-
-        NewPurchasedDateDayUpdated day ->
-            ( { model | newPurchasedDateDay = day }
-            , Effect.none
-            )
-
-        NewPurchasedAmountUpdated s ->
-            ( { model | newPurchasedAmount = Maybe.withDefault 0 (String.toInt s) }
-            , Effect.none
-            )
-
-        NewPriceUpdated s ->
-            ( { model | newPrice = Maybe.withDefault 0 (String.toInt s) }
             , Effect.none
             )
 
@@ -138,34 +90,29 @@ update msg model =
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
                 , name = model.newItemName
-                , purchase =
-                    case model.newPrice of
-                        _ ->
-                            Just
-                                (Shared.Model.Purchase
-                                    model.newDescription
-                                    (model.newPurchasedDateYear
-                                        ++ "-"
-                                        ++ model.newPurchasedDateMonth
-                                        ++ "-"
-                                        ++ model.newPurchasedDateDay
-                                    )
-                                    model.newPurchasedAmount
-                                    model.newPrice
-                                    0
-                                )
+                , purchase = Nothing
+
+                --                    case model.newPrice of
+                --                        _ ->
+                --                            Just
+                --                                (Shared.Model.Purchase
+                --                                    model.newDescription
+                --                                    (model.newPurchasedDateYear
+                --                                        ++ "-"
+                --                                        ++ model.newPurchasedDateMonth
+                --                                        ++ "-"
+                --                                        ++ model.newPurchasedDateDay
+                --                                    )
+                --                                    model.newPurchasedAmount
+                --                                    model.newPrice
+                --                                    0
+                --                                )
                 }
             )
 
         ClearNewTransactionForm ->
             ( { model
                 | newItemName = ""
-                , newDescription = ""
-                , newPurchasedDateYear = ""
-                , newPurchasedDateMonth = ""
-                , newPurchasedDateDay = ""
-                , newPurchasedAmount = 0
-                , newPrice = 0
                 , showCreateForm = False
                 , addPurchase = False
                 , newPurchases = []
@@ -173,7 +120,7 @@ update msg model =
             , Effect.none
             )
 
-        ShowCreateForm value ->
+        ShowCreateForm ->
             ( { model
                 | showCreateForm =
                     if model.showCreateForm == True then
@@ -244,7 +191,7 @@ view model =
                             Api.Success trackedItems ->
                                 viewTrackedItems model.showCreateForm trackedItems
 
-                            Api.Failure httpError ->
+                            Api.Failure _ ->
                                 Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Something went wrong retrieving the tracked items" ]
                         ]
                     , viewCreateTrackedItemForm model
@@ -258,7 +205,7 @@ view model =
 
 
 viewTrackedItems : Bool -> List Shared.Model.TrackedItem -> Html Msg
-viewTrackedItems showCreateForm ts =
+viewTrackedItems _ ts =
     let
         listView : Html Msg
         listView =
@@ -277,20 +224,11 @@ viewTrackedItems showCreateForm ts =
 
 viewShowCreateFormButton : Html Msg
 viewShowCreateFormButton =
-    Html.button [ class "button is-primary is-medium is-fullwidth", onClick (ShowCreateForm False) ] [ Html.text "New Transaction" ]
+    Html.button [ class "button is-primary is-medium is-fullwidth", onClick ShowCreateForm ] [ Html.text "New Transaction" ]
 
 
 viewCreateTrackedItemForm : Model -> Html Msg
 viewCreateTrackedItemForm model =
-    let
-        divClass : String
-        divClass =
-            "mt-2 is-flex is-flex-direction-row is-justify-content-space-between"
-
-        pClass : String
-        pClass =
-            "has-text-weight-medium"
-    in
     if model.showCreateForm == False then
         Html.div [] []
 
@@ -314,7 +252,7 @@ viewCreateTrackedItemForm model =
 
 
 showAddPurchase : Components.PurchaseInput.Model -> Purchase -> Html Msg
-showAddPurchase model purchase =
+showAddPurchase model _ =
     Html.div [ class "field" ]
         [ Components.PurchaseInput.new
             { model = model
