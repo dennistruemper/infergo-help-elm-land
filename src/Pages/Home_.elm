@@ -90,23 +90,13 @@ update msg model =
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
                 , name = model.newItemName
-                , purchase = Nothing
+                , purchases = Just model.newPurchases
 
-                --                    case model.newPrice of
-                --                        _ ->
-                --                            Just
-                --                                (Shared.Model.Purchase
-                --                                    model.newDescription
-                --                                    (model.newPurchasedDateYear
-                --                                        ++ "-"
-                --                                        ++ model.newPurchasedDateMonth
-                --                                        ++ "-"
-                --                                        ++ model.newPurchasedDateDay
-                --                                    )
-                --                                    model.newPurchasedAmount
-                --                                    model.newPrice
-                --                                    0
-                --                                )
+                --case model.newPurchases of
+                --    Just purchases ->
+                --        purchases
+                --    Nothing ->
+                --        []
                 }
             )
 
