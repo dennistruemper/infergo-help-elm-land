@@ -1,5 +1,6 @@
 module Api.TrackedItem exposing (create)
 
+import Array exposing (Array)
 import Effect exposing (Effect)
 import Http
 import Json.Encode
@@ -9,7 +10,7 @@ import Shared.Model exposing (Purchase, TrackedItem)
 create :
     { onResponse : Result Http.Error String -> msg
     , name : String
-    , purchases : Maybe (List Purchase)
+    , purchases : Maybe (Array Purchase)
     }
     -> Effect msg
 create options =
@@ -20,7 +21,7 @@ create options =
                 Just ps ->
                     Json.Encode.object
                         [ ( "name", Json.Encode.string options.name )
-                        , ( "purchases", Json.Encode.list encodePurchase ps )
+                        , ( "purchases", Json.Encode.list encodePurchase (Array.toList ps) )
                         ]
 
                 Nothing ->
