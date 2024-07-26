@@ -15,7 +15,6 @@ type PurchaseInput msg
     = Settings
         { model : Model
         , toMsg : Msg msg -> msg
-        , onSave : Maybe msg
         }
 
 
@@ -28,7 +27,6 @@ new props =
     Settings
         { model = props.model
         , toMsg = props.toMsg
-        , onSave = Nothing
         }
 
 

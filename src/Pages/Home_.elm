@@ -3,7 +3,6 @@ module Pages.Home_ exposing (Model, Msg, page)
 import Api
 import Api.TrackedItem
 import Api.TrackedItemList
-import Array exposing (Array)
 import Components.PurchaseInput
 import Components.TrackedItem
 import Effect exposing (Effect)
@@ -14,7 +13,7 @@ import Http
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
-import Shared.Model exposing (Purchase, TrackedItem)
+import Shared.Model exposing (NewPurchase, Purchase, TrackedItem)
 import View exposing (View)
 
 
@@ -34,22 +33,32 @@ page shared route =
 
 type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
-    , purchaseInput : Components.PurchaseInput.Model
     , newItemName : String
     , showCreateForm : Bool
     , addPurchase : Bool
-    , newPurchases : Array Purchase
+    , newPurchase : Maybe NewPurchase
+    , newPurchaseDescription : String
+    , newPurchaseYear : String
+    , newPurchaseMonth : String
+    , newPurchaseDay : String
+    , newPurchaseAmount : String
+    , newPurchasePrice : String
     }
 
 
 init : () -> ( Model, Effect Msg )
 init () =
     ( { trackedItems = Api.Loading
-      , purchaseInput = Components.PurchaseInput.init
       , newItemName = ""
       , showCreateForm = False
       , addPurchase = False
-      , newPurchases = Array.empty
+      , newPurchase = Nothing
+      , newPurchaseDescription = ""
+      , newPurchaseYear = ""
+      , newPurchaseMonth = ""
+      , newPurchaseDay = ""
+      , newPurchaseAmount = ""
+      , newPurchasePrice = ""
       }
     , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
@@ -65,8 +74,7 @@ type Msg
     | NewTrackedItemSubmitted
     | ClearNewTransactionForm
     | ShowCreateForm
-    | NewPurchaseInput Int PurchaseInputType String
-    | PurchaseInputCompleted (Components.PurchaseInput.Msg Msg)
+    | NewPurchaseInput PurchaseInputType String
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
 
@@ -91,7 +99,7 @@ update msg model =
         AddPurchaseClicked ->
             ( { model
                 | addPurchase = True
-                , newPurchases = Array.append model.newPurchases (Array.fromList [ Purchase "" "" 0 0 0 ])
+                , newPurchase = Just (NewPurchase "" "" "" "" "" 0 0 0)
               }
             , Effect.none
             )
@@ -101,13 +109,6 @@ update msg model =
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
                 , name = model.newItemName
-                , purchases = Just model.newPurchases
-
-                --case model.newPurchases of
-                --    Just purchases ->
-                --        purchases
-                --    Nothing ->
-                --        []
                 }
             )
 
@@ -116,7 +117,6 @@ update msg model =
                 | newItemName = ""
                 , showCreateForm = False
                 , addPurchase = False
-                , newPurchases = Array.empty
               }
             , Effect.none
             )
@@ -133,41 +133,23 @@ update msg model =
             , Effect.none
             )
 
-        NewPurchaseInput index PurchaseDescription value ->
-            let
-                purchase : Purchase
-                purchase =
-                    case Array.get index model.newPurchases of
-                        Just p ->
-                            p
+        NewPurchaseInput PurchaseDescription value ->
+            ( { model | newPurchaseDescription = value }, Effect.none )
 
-                        Nothing ->
-                            Purchase "" "" 0 0 0
-            in
-            ( model, Effect.none )
+        NewPurchaseInput PurchaseYear value ->
+            ( { model | newPurchaseYear = value }, Effect.none )
 
-        NewPurchaseInput index PurchaseYear value ->
-            ( model, Effect.none )
+        NewPurchaseInput PurchaseMonth value ->
+            ( { model | newPurchaseMonth = value }, Effect.none )
 
-        NewPurchaseInput index PurchaseMonth value ->
-            ( model, Effect.none )
+        NewPurchaseInput PurchaseDay value ->
+            ( { model | newPurchaseDay = value }, Effect.none )
 
-        NewPurchaseInput index PurchaseDay value ->
-            ( model, Effect.none )
+        NewPurchaseInput PurchaseAmount value ->
+            ( { model | newPurchaseAmount = value }, Effect.none )
 
-        NewPurchaseInput index PurchaseAmount value ->
-            ( model, Effect.none )
-
-        NewPurchaseInput index PurchasePrice value ->
-            ( model, Effect.none )
-
-        PurchaseInputCompleted innerMsg ->
-            Components.PurchaseInput.update
-                { msg = innerMsg
-                , model = model.purchaseInput
-                , toModel = \purchaseInput -> { model | purchaseInput = purchaseInput }
-                , toMsg = PurchaseInputCompleted
-                }
+        NewPurchaseInput PurchasePrice value ->
+            ( { model | newPurchasePrice = value }, Effect.none )
 
         TrackedItemApiResponded (Ok listOfTrackedItems) ->
             ( { model | trackedItems = Api.Success listOfTrackedItems }
@@ -185,9 +167,22 @@ update msg model =
             )
 
         TrackedItemCreated (Err httpError) ->
-            ( model
-            , Effect.none
-            )
+            ( model, Effect.none )
+
+
+newPurchaseToPurchase : NewPurchase -> Purchase
+newPurchaseToPurchase np =
+    let
+        purchaseDate : String -> String -> String -> String
+        purchaseDate year month day =
+            year ++ "-" ++ month ++ "-" ++ day
+    in
+    Purchase
+        np.product_description
+        (purchaseDate np.purchased_year np.purchased_month np.purchased_day)
+        np.purchased_amount
+        np.price
+        np.interval_to_previous
 
 
 
@@ -218,7 +213,7 @@ view model =
                                 Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Loading tracked items..." ]
 
                             Api.Success trackedItems ->
-                                viewTrackedItems model.showCreateForm trackedItems
+                                viewTrackedItems trackedItems
 
                             Api.Failure _ ->
                                 Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Something went wrong retrieving the tracked items" ]
@@ -233,8 +228,8 @@ view model =
     }
 
 
-viewTrackedItems : Bool -> List Shared.Model.TrackedItem -> Html Msg
-viewTrackedItems _ ts =
+viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
+viewTrackedItems ts =
     let
         listView : Html Msg
         listView =
@@ -253,7 +248,7 @@ viewTrackedItems _ ts =
 
 viewShowCreateFormButton : Html Msg
 viewShowCreateFormButton =
-    Html.button [ class "button is-primary is-medium is-fullwidth", onClick ShowCreateForm ] [ Html.text "New Transaction" ]
+    Html.button [ class "button is-primary is-medium is-fullwidth", onClick ShowCreateForm ] [ Html.text "New Tracked Item" ]
 
 
 viewCreateTrackedItemForm : Model -> Html Msg
@@ -269,7 +264,11 @@ viewCreateTrackedItemForm model =
                     , Html.div [ class "control" ] [ Html.input [ class "input", placeholder "Shampoo", type_ "text", onInput NewItemNameUpdated ] [] ]
                     ]
                 , Html.label [ class "label" ] [ Html.text "Purchases" ]
-                , Html.div [] (List.indexedMap (\i p -> showAddPurchase i p) (Array.toList model.newPurchases))
+                , if model.addPurchase then
+                    Html.div [] [ showAddPurchase ]
+
+                  else
+                    Html.div [] []
                 , Html.div [ class "field mt-2" ]
                     [ Html.button [ class "button is-dark", onClick AddPurchaseClicked ] [ Html.text "Add purchase" ] ]
                 , Html.div [ class "mt-2 is-flex is-justify-content-space-around" ]
@@ -280,22 +279,13 @@ viewCreateTrackedItemForm model =
             ]
 
 
-showAddPurchase : Int -> Purchase -> Html Msg
-showAddPurchase index purchase =
+showAddPurchase : Html Msg
+showAddPurchase =
     Html.div [ class "field grid" ]
-        [ Html.input [ class "input", placeholder "Product", onInput (NewPurchaseInput index PurchaseDescription) ] []
-        , Html.input [ class "input", placeholder "YYYY" ] []
-        , Html.input [ class "input", placeholder "MM" ] []
-        , Html.input [ class "input", placeholder "DD" ] []
-        , Html.input [ class "input", placeholder "1" ] []
-        , Html.input [ class "input", placeholder "1795" ] []
+        [ Html.input [ class "input", placeholder "Product", onInput (NewPurchaseInput PurchaseDescription) ] []
+        , Html.input [ class "input", placeholder "YYYY", onInput (NewPurchaseInput PurchaseYear) ] []
+        , Html.input [ class "input", placeholder "MM", onInput (NewPurchaseInput PurchaseMonth) ] []
+        , Html.input [ class "input", placeholder "DD", onInput (NewPurchaseInput PurchaseDay) ] []
+        , Html.input [ class "input", placeholder "1", onInput (NewPurchaseInput PurchaseAmount) ] []
+        , Html.input [ class "input", placeholder "1795", onInput (NewPurchaseInput PurchasePrice) ] []
         ]
-
-
-
---[ Components.PurchaseInput.new
---    { model = model
---    , toMsg = PurchaseInputCompleted
---    }
---    |> Components.PurchaseInput.view
---]
