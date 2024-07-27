@@ -1,4 +1,4 @@
-module Shared.Model exposing (Model, NewPurchase, Purchase, TrackedItem)
+module Shared.Model exposing (Model, Purchase, TrackedItem)
 
 {-| -}
 
@@ -23,18 +23,6 @@ type alias TrackedItem =
 type alias Purchase =
     { product_description : String
     , purchased_date : String
-    , purchased_amount : Int
-    , price : Int
-    , interval_to_previous : Int
-    }
-
-
-type alias NewPurchase =
-    { tracked_item_name : String
-    , product_description : String
-    , purchased_year : String
-    , purchased_month : String
-    , purchased_day : String
     , purchased_amount : Int
     , price : Int
     , interval_to_previous : Int

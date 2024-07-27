@@ -18,7 +18,7 @@ import View exposing (View)
 
 
 page : Shared.Model -> Route () -> Page Model Msg
-page shared route =
+page _ _ =
     Page.new
         { init = init
         , update = update
@@ -122,6 +122,12 @@ update msg model =
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
                 , name = model.newItemName
+                , purchases =
+                    if Dict.size model.newPurchases == 0 then
+                        Nothing
+
+                    else
+                        Just (List.map newPurchaseToSharedPurchase (Dict.values model.newPurchases))
                 }
             )
 
@@ -187,13 +193,28 @@ update msg model =
             , Effect.none
             )
 
-        TrackedItemCreated (Ok s) ->
+        TrackedItemCreated (Ok _) ->
             ( model
             , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
             )
 
-        TrackedItemCreated (Err httpError) ->
+        TrackedItemCreated (Err _) ->
             ( model, Effect.none )
+
+
+newPurchaseToSharedPurchase : NewPurchase -> Purchase
+newPurchaseToSharedPurchase np =
+    Purchase
+        np.product_description
+        (toDate np.year np.month np.day)
+        (String.toInt np.amount |> Maybe.withDefault 0)
+        (String.toInt np.price |> Maybe.withDefault 0)
+        0
+
+
+toDate : String -> String -> String -> String
+toDate year month day =
+    year ++ "-" ++ month ++ "-" ++ day
 
 
 
@@ -201,7 +222,7 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.none
 
 

@@ -9,20 +9,28 @@ import Shared.Model exposing (Purchase, TrackedItem)
 create :
     { onResponse : Result Http.Error String -> msg
     , name : String
+    , purchases : Maybe (List Purchase)
     }
     -> Effect msg
 create options =
     let
         body : Json.Encode.Value
         body =
-            Json.Encode.object
-                [ ( "name", Json.Encode.string options.name ) ]
+            case options.purchases of
+                Just ps ->
+                    Json.Encode.object
+                        [ ( "name", Json.Encode.string options.name )
+                        , ( "purchases", Json.Encode.list encodePurchase ps )
+                        ]
+
+                Nothing ->
+                    Json.Encode.object
+                        [ ( "name", Json.Encode.string options.name ) ]
 
         encodePurchase : Purchase -> Json.Encode.Value
         encodePurchase p =
             Json.Encode.object
-                [ ( "tracked_item_id", Json.Encode.string "d28f9c6f-d021-4860-8b25-7d2c03768b5e" )
-                , ( "purchased_date", Json.Encode.string p.purchased_date )
+                [ ( "purchased_date", Json.Encode.string p.purchased_date )
                 , ( "product_description", Json.Encode.string p.product_description )
                 , ( "purchased_amount", Json.Encode.int p.purchased_amount )
                 , ( "price", Json.Encode.int p.price )
