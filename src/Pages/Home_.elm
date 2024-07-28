@@ -118,7 +118,12 @@ update msg model =
             )
 
         NewTrackedItemSubmitted ->
-            ( { model | showCreateForm = False }
+            ( { model
+                | showCreateForm = False
+                , newItemName = ""
+                , addPurchase = False
+                , newPurchases = Dict.empty
+              }
             , Api.TrackedItem.create
                 { onResponse = TrackedItemCreated
                 , name = model.newItemName
