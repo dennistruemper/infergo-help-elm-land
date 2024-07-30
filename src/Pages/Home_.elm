@@ -3,7 +3,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 import Api
 import Api.TrackedItem
 import Api.TrackedItemList
-import Components.TrackedItem
+import Components.TrackedItem exposing (init, new)
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Html exposing (Html)
@@ -33,10 +33,10 @@ page _ _ =
 
 type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
+    , trackedItemComponent : Components.TrackedItem.Model Bool
     , newItemName : String
     , showCreateForm : Bool
     , addPurchase : Bool
-    , newPurchase : Maybe NewPurchase
     , newPurchases : Dict Int NewPurchase
     , newPurchaseDescription : String
     , newPurchaseYear : String
@@ -60,10 +60,10 @@ type alias NewPurchase =
 init : () -> ( Model, Effect Msg )
 init () =
     ( { trackedItems = Api.Loading
+      , trackedItemComponent = Components.TrackedItem.init { name = "", purchases = [] }
       , newItemName = ""
       , showCreateForm = False
       , addPurchase = False
-      , newPurchase = Nothing
       , newPurchases = Dict.empty
       , newPurchaseDescription = ""
       , newPurchaseYear = ""
@@ -89,6 +89,7 @@ type Msg
     | NewPurchaseInput Int PurchaseInputType String
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
+    | TrackedItemExpanded (Components.TrackedItem.Msg TrackedItem Bool)
 
 
 type PurchaseInputType
@@ -111,7 +112,6 @@ update msg model =
         AddPurchaseClicked index ->
             ( { model
                 | addPurchase = True
-                , newPurchase = Just (NewPurchase "" "" "" "" "" "")
                 , newPurchases = Dict.insert index (NewPurchase "" "" "" "" "" "") model.newPurchases
               }
             , Effect.none
@@ -206,6 +206,14 @@ update msg model =
         TrackedItemCreated (Err _) ->
             ( model, Effect.none )
 
+        TrackedItemExpanded innerMsg ->
+            Components.TrackedItem.update
+                { msg = innerMsg
+                , model = model.trackedItemComponent
+                , toModel = \trackedItem -> { model | trackedItem = trackedItem }
+                , toMsg = TrackedItemExpanded
+                }
+
 
 newPurchaseToSharedPurchase : NewPurchase -> Purchase
 newPurchaseToSharedPurchase np =
@@ -275,7 +283,18 @@ viewTrackedItems ts =
                     [ Html.h2 [ class "subtitle is-2 has-text-centered" ] [ Html.text "No tracked items yet! Ready to add one?" ] ]
 
             else
-                Html.div [] (List.map Components.TrackedItem.view ts)
+                Html.div []
+                    (List.map
+                        (\t ->
+                            Components.TrackedItem.new
+                                { purchases = t.purchases
+                                , name = t.name
+                                }
+                                |> Components.TrackedItem.withIsExpanded False
+                                |> Components.TrackedItem.view
+                        )
+                        ts
+                    )
     in
     Html.div []
         [ Html.h1 [ class "title is-1 has-text-centered pt-5" ] [ Html.text "Tracked Items" ]
