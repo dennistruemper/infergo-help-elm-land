@@ -33,7 +33,7 @@ page _ _ =
 
 type alias Model =
     { trackedItems : Api.Data (List TrackedItem)
-    , trackedItemComponent : Components.TrackedItem.Model Bool
+    , trackedItemComponent : Components.TrackedItem.Model
     , newItemName : String
     , showCreateForm : Bool
     , addPurchase : Bool
@@ -60,7 +60,7 @@ type alias NewPurchase =
 init : () -> ( Model, Effect Msg )
 init () =
     ( { trackedItems = Api.Loading
-      , trackedItemComponent = Components.TrackedItem.init { name = "", purchases = [] }
+      , trackedItemComponent = Components.TrackedItem.init { trackedItem = Nothing }
       , newItemName = ""
       , showCreateForm = False
       , addPurchase = False
@@ -89,7 +89,7 @@ type Msg
     | NewPurchaseInput Int PurchaseInputType String
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
-    | TrackedItemExpanded (Components.TrackedItem.Msg TrackedItem Bool)
+    | TrackedItemExpanded Components.TrackedItem.Msg
 
 
 type PurchaseInputType
@@ -210,7 +210,7 @@ update msg model =
             Components.TrackedItem.update
                 { msg = innerMsg
                 , model = model.trackedItemComponent
-                , toModel = \trackedItem -> { model | trackedItem = trackedItem }
+                , toModel = \trackedItem -> { model | trackedItemComponent = trackedItem }
                 , toMsg = TrackedItemExpanded
                 }
 
@@ -258,7 +258,7 @@ view model =
                                 Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Loading tracked items..." ]
 
                             Api.Success trackedItems ->
-                                viewTrackedItems trackedItems
+                                viewTrackedItems model trackedItems
 
                             Api.Failure _ ->
                                 Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Something went wrong retrieving the tracked items" ]
@@ -273,8 +273,8 @@ view model =
     }
 
 
-viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
-viewTrackedItems ts =
+viewTrackedItems : Model -> List Shared.Model.TrackedItem -> Html Msg
+viewTrackedItems model ts =
     let
         listView : Html Msg
         listView =
@@ -287,10 +287,11 @@ viewTrackedItems ts =
                     (List.map
                         (\t ->
                             Components.TrackedItem.new
-                                { purchases = t.purchases
+                                { model = model.trackedItemComponent
+                                , toMsg = TrackedItemExpanded
                                 , name = t.name
+                                , purchases = t.purchases
                                 }
-                                |> Components.TrackedItem.withIsExpanded False
                                 |> Components.TrackedItem.view
                         )
                         ts
@@ -300,6 +301,10 @@ viewTrackedItems ts =
         [ Html.h1 [ class "title is-1 has-text-centered pt-5" ] [ Html.text "Tracked Items" ]
         , listView
         ]
+
+
+
+--|> Components.TrackedItem.withIsExpanded False
 
 
 viewShowCreateFormButton : Html Msg

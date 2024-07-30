@@ -4,7 +4,7 @@ import Components.Purchase
 import Effect exposing (Effect)
 import Html exposing (Html)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onBlur, onFocus)
+import Html.Events exposing (onBlur, onClick, onFocus)
 import Shared.Model
 
 
@@ -12,10 +12,10 @@ import Shared.Model
 -- SETTINGS
 
 
-type TrackedItem trackedItem msg
+type TrackedItem msg
     = Settings
-        { model : Model trackedItem
-        , toMsg : Msg trackedItem msg -> msg
+        { model : Model
+        , toMsg : Msg -> msg
         , name : String
         , purchases : List Shared.Model.Purchase
         , isExpanded : Bool
@@ -23,20 +23,18 @@ type TrackedItem trackedItem msg
 
 
 new :
-    { model : Model trackedItem
-    , toMsg : Msg trackedItem msg -> msg
-    , trackedItem : Shared.Model.TrackedItem
-
-    --, name : String
-    --, purchases : List Purchase
+    { model : Model
+    , toMsg : Msg -> msg
+    , name : String
+    , purchases : List Shared.Model.Purchase
     }
-    -> TrackedItem trackedItem msg
+    -> TrackedItem msg
 new props =
     Settings
         { model = props.model
         , toMsg = props.toMsg
-        , name = props.trackedItem.name
-        , purchases = props.trackedItem.purchases
+        , name = props.name
+        , purchases = props.purchases
         , isExpanded = False
         }
 
@@ -45,7 +43,7 @@ new props =
 -- MODIFIERS
 
 
-withIsExpanded : TrackedItem trackedItem msg -> TrackedItem trackedItem msg
+withIsExpanded : TrackedItem msg -> TrackedItem msg
 withIsExpanded (Settings settings) =
     Settings { settings | isExpanded = True }
 
@@ -54,7 +52,7 @@ withIsExpanded (Settings settings) =
 -- MODEL
 
 
-type Model trackedItem
+type Model
     = Model
         { isExpanded : Bool
         , name : String
@@ -62,12 +60,24 @@ type Model trackedItem
         }
 
 
-init : { trackedItem : Shared.Model.TrackedItem } -> Model trackedItem
+init : { trackedItem : Maybe Shared.Model.TrackedItem } -> Model
 init props =
     Model
         { isExpanded = False
-        , name = props.trackedItem.name
-        , purchases = props.trackedItem.purchases
+        , name =
+            case props.trackedItem of
+                Just ti ->
+                    ti.name
+
+                Nothing ->
+                    "Unknown"
+        , purchases =
+            case props.trackedItem of
+                Just ti ->
+                    ti.purchases
+
+                Nothing ->
+                    []
         }
 
 
@@ -75,16 +85,16 @@ init props =
 -- UPDATE
 
 
-type Msg trackedItem msg
+type Msg
     = FocusedTrackedItem
     | BlurredTrackedItem
 
 
 update :
-    { msg : Msg trackedItem msg
-    , model : Model trackedItem
-    , toModel : Model trackedItem -> model
-    , toMsg : Msg trackedItem msg -> msg
+    { msg : Msg
+    , model : Model
+    , toModel : Model -> model
+    , toMsg : Msg -> msg
     }
     -> ( model, Effect msg )
 update props =
@@ -92,7 +102,7 @@ update props =
         (Model model) =
             props.model
 
-        toParentModel : ( Model trackedItem, Effect msg ) -> ( model, Effect msg )
+        toParentModel : ( Model, Effect msg ) -> ( model, Effect msg )
         toParentModel ( innerModel, effect ) =
             ( props.toModel innerModel
             , effect
@@ -111,7 +121,7 @@ update props =
 -- VIEW
 
 
-view : TrackedItem msg trackedItem -> Html msg
+view : TrackedItem msg -> Html msg
 view (Settings settings) =
     let
         pHeaderClass : String
@@ -152,8 +162,7 @@ view (Settings settings) =
                         firstPurchase
                     ]
     in
-    Html.div [ class "box pl-6 pr-6" ]
-        --, onFocus (settings.toMsg FocusedTrackedItem) ]
+    Html.div [ class "box pl-6 pr-6", onFocus (settings.toMsg FocusedTrackedItem), onClick (settings.toMsg FocusedTrackedItem) ]
         [ Html.div [ class "is-full mb-2" ]
             [ Html.h5 [ class "title is-5" ] [ Html.text settings.name ] ]
         , purchases
