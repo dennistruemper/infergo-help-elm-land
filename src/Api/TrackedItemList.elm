@@ -1,10 +1,24 @@
-module Api.TrackedItemList exposing (getAll)
+module Api.TrackedItemList exposing (Purchase, TrackedItem, getAll)
 
 import Effect exposing (Effect)
 import Http
-import Json.Decode as Decode exposing (Decoder, int, list, null, oneOf, string, succeed)
+import Json.Decode exposing (Decoder, int, list, string, succeed)
 import Json.Decode.Pipeline exposing (optional, required)
-import Shared.Model exposing (Purchase, TrackedItem)
+
+
+type alias TrackedItem =
+    { name : String
+    , purchases : List Purchase
+    }
+
+
+type alias Purchase =
+    { product_description : String
+    , purchased_date : String
+    , purchased_amount : Int
+    , price : Int
+    , interval_to_previous : Int
+    }
 
 
 getAll : { onResponse : Result Http.Error (List TrackedItem) -> msg } -> Effect msg

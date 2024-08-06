@@ -88,7 +88,7 @@ type Msg
     | ShowCreateForm
     | NewPurchaseInput Int PurchaseInputType String
     | TrackedItemCreated (Result Http.Error String)
-    | TrackedItemApiResponded (Result Http.Error (List TrackedItem))
+    | TrackedItemApiResponded (Result Http.Error (List Api.TrackedItemList.TrackedItem))
     | TrackedItemExpanded Components.TrackedItem.Msg
 
 
@@ -188,8 +188,8 @@ update msg model =
             , Effect.none
             )
 
-        TrackedItemApiResponded (Ok listOfTrackedItems) ->
-            ( { model | trackedItems = Api.Success listOfTrackedItems }
+        TrackedItemApiResponded (Ok listOfApiTrackedItems) ->
+            ( { model | trackedItems = Api.Success listOfApiTrackedItems }
             , Effect.none
             )
 
@@ -283,19 +283,7 @@ viewTrackedItems model ts =
                     [ Html.h2 [ class "subtitle is-2 has-text-centered" ] [ Html.text "No tracked items yet! Ready to add one?" ] ]
 
             else
-                Html.div []
-                    (List.map
-                        (\t ->
-                            Components.TrackedItem.new
-                                { model = model.trackedItemComponent
-                                , toMsg = TrackedItemExpanded
-                                , name = t.name
-                                , purchases = t.purchases
-                                }
-                                |> Components.TrackedItem.view
-                        )
-                        ts
-                    )
+                Html.div [] (List.map (\t -> viewDefaultTrackedItem model.trackedItemComponent t) ts)
     in
     Html.div []
         [ Html.h1 [ class "title is-1 has-text-centered pt-5" ] [ Html.text "Tracked Items" ]
@@ -303,8 +291,16 @@ viewTrackedItems model ts =
         ]
 
 
-
---|> Components.TrackedItem.withIsExpanded False
+viewDefaultTrackedItem : Components.TrackedItem.Model -> TrackedItem -> Html Msg
+viewDefaultTrackedItem model t =
+    Components.TrackedItem.new
+        { model = model
+        , toMsg = TrackedItemExpanded
+        , name = t.name
+        , purchases = t.purchases
+        }
+        |> Components.TrackedItem.withIsExpanded
+        |> Components.TrackedItem.view
 
 
 viewShowCreateFormButton : Html Msg

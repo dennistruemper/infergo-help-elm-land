@@ -1,4 +1,4 @@
-module Components.TrackedItem exposing (Model, Msg, init, new, update, view, withIsExpanded)
+module Components.TrackedItem exposing (Model, Msg, TrackedItem, init, new, update, view, withIsExpanded)
 
 import Components.Purchase
 import Effect exposing (Effect)
