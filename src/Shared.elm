@@ -43,7 +43,7 @@ type alias Model =
 
 init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
 init flagsResult route =
-    ( {}
+    ( { trackedItems = [] }
     , Effect.none
     )
 

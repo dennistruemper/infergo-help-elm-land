@@ -13,7 +13,7 @@ import Http
 import Page exposing (Page)
 import Route exposing (Route)
 import Shared
-import Shared.Model exposing (Purchase, TrackedItem)
+import Shared.Model
 import View exposing (View)
 
 
@@ -32,18 +32,10 @@ page _ _ =
 
 
 type alias Model =
-    { trackedItems : Api.Data (List TrackedItem)
-    , trackedItemComponent : Components.TrackedItem.Model
+    { trackedItems : Api.Data (List Shared.Model.TrackedItem)
     , newItemName : String
     , showCreateForm : Bool
-    , addPurchase : Bool
     , newPurchases : Dict Int NewPurchase
-    , newPurchaseDescription : String
-    , newPurchaseYear : String
-    , newPurchaseMonth : String
-    , newPurchaseDay : String
-    , newPurchaseAmount : String
-    , newPurchasePrice : String
     }
 
 
@@ -60,17 +52,9 @@ type alias NewPurchase =
 init : () -> ( Model, Effect Msg )
 init () =
     ( { trackedItems = Api.Loading
-      , trackedItemComponent = Components.TrackedItem.init { trackedItem = Nothing }
       , newItemName = ""
       , showCreateForm = False
-      , addPurchase = False
       , newPurchases = Dict.empty
-      , newPurchaseDescription = ""
-      , newPurchaseYear = ""
-      , newPurchaseMonth = ""
-      , newPurchaseDay = ""
-      , newPurchaseAmount = ""
-      , newPurchasePrice = ""
       }
     , Api.TrackedItemList.getAll { onResponse = TrackedItemApiResponded }
     )
@@ -111,8 +95,7 @@ update msg model =
 
         AddPurchaseClicked index ->
             ( { model
-                | addPurchase = True
-                , newPurchases = Dict.insert index (NewPurchase "" "" "" "" "" "") model.newPurchases
+                | newPurchases = Dict.insert index (NewPurchase "" "" "" "" "" "") model.newPurchases
               }
             , Effect.none
             )
@@ -121,7 +104,6 @@ update msg model =
             ( { model
                 | showCreateForm = False
                 , newItemName = ""
-                , addPurchase = False
                 , newPurchases = Dict.empty
               }
             , Api.TrackedItem.create
@@ -132,7 +114,7 @@ update msg model =
                         Nothing
 
                     else
-                        Just (List.map newPurchaseToSharedPurchase (Dict.values model.newPurchases))
+                        Just (List.map newPurchaseToApiPurchase (Dict.values model.newPurchases))
                 }
             )
 
@@ -140,7 +122,6 @@ update msg model =
             ( { model
                 | newItemName = ""
                 , showCreateForm = False
-                , addPurchase = False
                 , newPurchases = Dict.empty
               }
             , Effect.none
@@ -189,7 +170,7 @@ update msg model =
             )
 
         TrackedItemApiResponded (Ok listOfApiTrackedItems) ->
-            ( { model | trackedItems = Api.Success listOfApiTrackedItems }
+            ( { model | trackedItems = Api.Success (List.map toSharedTrackedItem listOfApiTrackedItems) }
             , Effect.none
             )
 
@@ -207,17 +188,17 @@ update msg model =
             ( model, Effect.none )
 
         TrackedItemExpanded innerMsg ->
-            Components.TrackedItem.update
-                { msg = innerMsg
-                , model = model.trackedItemComponent
-                , toModel = \trackedItem -> { model | trackedItemComponent = trackedItem }
-                , toMsg = TrackedItemExpanded
-                }
+            ( model, Effect.none )
 
 
-newPurchaseToSharedPurchase : NewPurchase -> Purchase
-newPurchaseToSharedPurchase np =
-    Purchase
+toSharedTrackedItem : Api.TrackedItemList.TrackedItem -> Shared.Model.TrackedItem
+toSharedTrackedItem apiTi =
+    Shared.Model.TrackedItem apiTi.name apiTi.purchases False
+
+
+newPurchaseToApiPurchase : NewPurchase -> Api.TrackedItem.ApiPurchase
+newPurchaseToApiPurchase np =
+    Api.TrackedItem.ApiPurchase
         np.product_description
         (toDate np.year np.month np.day)
         (String.toInt np.amount |> Maybe.withDefault 0)
@@ -276,6 +257,19 @@ view model =
 viewTrackedItems : Model -> List Shared.Model.TrackedItem -> Html Msg
 viewTrackedItems model ts =
     let
+        singleTrackedItem : List Shared.Model.TrackedItem -> Shared.Model.TrackedItem
+        singleTrackedItem items =
+            if List.isEmpty items then
+                Shared.Model.TrackedItem "" [] False
+
+            else
+                case items.head of
+                    Just item ->
+                        item
+
+                    Nothing ->
+                        Shared.Model.TrackedItem "" [] False
+
         listView : Html Msg
         listView =
             if List.isEmpty ts then
@@ -283,24 +277,13 @@ viewTrackedItems model ts =
                     [ Html.h2 [ class "subtitle is-2 has-text-centered" ] [ Html.text "No tracked items yet! Ready to add one?" ] ]
 
             else
-                Html.div [] (List.map (\t -> viewDefaultTrackedItem model.trackedItemComponent t) ts)
+                 Components.TrackedItem.new
+                 { model = 
     in
     Html.div []
         [ Html.h1 [ class "title is-1 has-text-centered pt-5" ] [ Html.text "Tracked Items" ]
         , listView
         ]
-
-
-viewDefaultTrackedItem : Components.TrackedItem.Model -> TrackedItem -> Html Msg
-viewDefaultTrackedItem model t =
-    Components.TrackedItem.new
-        { model = model
-        , toMsg = TrackedItemExpanded
-        , name = t.name
-        , purchases = t.purchases
-        }
-        |> Components.TrackedItem.withIsExpanded
-        |> Components.TrackedItem.view
 
 
 viewShowCreateFormButton : Html Msg
@@ -321,11 +304,7 @@ viewCreateTrackedItemForm model =
                     , Html.div [ class "control" ] [ Html.input [ class "input", placeholder "Shampoo", type_ "text", onInput NewItemNameUpdated ] [] ]
                     ]
                 , Html.label [ class "label" ] [ Html.text "Purchases" ]
-                , if model.addPurchase then
-                    Html.div [] (List.indexedMap (\i p -> showAddPurchase i p) (Dict.values model.newPurchases))
-
-                  else
-                    Html.div [] []
+                , Html.div [] (List.indexedMap (\i p -> showAddPurchase i p) (Dict.values model.newPurchases))
                 , Html.div [ class "field mt-2" ]
                     [ Html.button [ class "button is-dark", onClick (AddPurchaseClicked (Dict.size model.newPurchases)) ] [ Html.text "Add purchase" ] ]
                 , Html.div [ class "mt-2 is-flex is-justify-content-space-around" ]

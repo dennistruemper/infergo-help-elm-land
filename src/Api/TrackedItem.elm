@@ -1,15 +1,30 @@
-module Api.TrackedItem exposing (create)
+module Api.TrackedItem exposing (ApiPurchase, ApiTrackedItem, create)
 
 import Effect exposing (Effect)
 import Http
 import Json.Encode
-import Shared.Model exposing (Purchase, TrackedItem)
+import Shared.Model
+
+
+type alias ApiTrackedItem =
+    { name : String
+    , purchases : List ApiPurchase
+    }
+
+
+type alias ApiPurchase =
+    { product_description : String
+    , purchased_date : String
+    , purchased_amount : Int
+    , price : Int
+    , interval_to_previous : Int
+    }
 
 
 create :
     { onResponse : Result Http.Error String -> msg
     , name : String
-    , purchases : Maybe (List Purchase)
+    , purchases : Maybe (List ApiPurchase)
     }
     -> Effect msg
 create options =
@@ -27,7 +42,7 @@ create options =
                     Json.Encode.object
                         [ ( "name", Json.Encode.string options.name ) ]
 
-        encodePurchase : Purchase -> Json.Encode.Value
+        encodePurchase : ApiPurchase -> Json.Encode.Value
         encodePurchase p =
             Json.Encode.object
                 [ ( "purchased_date", Json.Encode.string p.purchased_date )

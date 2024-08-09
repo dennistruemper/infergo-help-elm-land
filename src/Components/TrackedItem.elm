@@ -60,24 +60,12 @@ type Model
         }
 
 
-init : { trackedItem : Maybe Shared.Model.TrackedItem } -> Model
+init : { name : String, purchases : List Shared.Model.Purchase } -> Model
 init props =
     Model
         { isExpanded = False
-        , name =
-            case props.trackedItem of
-                Just ti ->
-                    ti.name
-
-                Nothing ->
-                    "Unknown"
-        , purchases =
-            case props.trackedItem of
-                Just ti ->
-                    ti.purchases
-
-                Nothing ->
-                    []
+        , name = props.name
+        , purchases = props.purchases
         }
 
 

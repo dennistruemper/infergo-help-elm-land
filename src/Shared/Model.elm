@@ -11,7 +11,7 @@ own file, so they can be imported by `Effect.elm`
 
 -}
 type alias Model =
-    {}
+    { trackedItems : List TrackedItem }
 
 
 type alias TrackedItem =
