@@ -13,3 +13,4 @@ own file, so they can be imported by `Effect.elm`
 type Msg
     = Nothing
     | TrackedItemCreated TrackedItem
+    | ToggleTrackedItem String -- id

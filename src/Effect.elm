@@ -6,7 +6,7 @@ module Effect exposing
     , pushRoutePath, replaceRoutePath
     , loadExternalUrl, back
     , map, toCmd
-    , createTrackedItem
+    , createTrackedItem, toggleTrackedItem
     )
 
 {-|
@@ -145,7 +145,12 @@ back =
 
 createTrackedItem : { name : String, description : String } -> Effect msg
 createTrackedItem ti =
-    SendSharedMsg (Shared.Msg.TrackedItemCreated (TrackedItem ti.name [] False))
+    SendSharedMsg (Shared.Msg.TrackedItemCreated (TrackedItem "todo id" ti.name [] False))
+
+
+toggleTrackedItem : String -> Effect msg
+toggleTrackedItem id =
+    SendSharedMsg (Shared.Msg.ToggleTrackedItem id)
 
 
 

@@ -15,7 +15,8 @@ type alias Model =
 
 
 type alias TrackedItem =
-    { name : String
+    { id : String
+    , name : String
     , purchases : List Purchase
     , isExpanded : Bool
     }

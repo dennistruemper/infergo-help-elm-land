@@ -16,7 +16,7 @@ import Effect exposing (Effect)
 import Json.Decode
 import Route exposing (Route)
 import Route.Path
-import Shared.Model
+import Shared.Model exposing (Purchase, TrackedItem)
 import Shared.Msg
 
 
@@ -41,9 +41,71 @@ type alias Model =
     Shared.Model.Model
 
 
+trackedItemExampleShampoo : TrackedItem
+trackedItemExampleShampoo =
+    { name = "Shampoo"
+    , id = "1"
+    , purchases = [ purchaseExampleShampoo1, purchaseExampleShampoo2 ]
+    , isExpanded = False
+    }
+
+
+purchaseExampleShampoo1 : Purchase
+purchaseExampleShampoo1 =
+    { product_description = "Shampoo with strawberry taste"
+    , purchased_date = "2021-01-01"
+    , purchased_amount = 1
+    , price = 10
+    , interval_to_previous = 0
+    }
+
+
+purchaseExampleShampoo2 : Purchase
+purchaseExampleShampoo2 =
+    { product_description = "Shampoo"
+    , purchased_date = "2021-01-02"
+    , purchased_amount = 1
+    , price = 10
+    , interval_to_previous = 1
+    }
+
+
+trackedItemExampleToothpaste : TrackedItem
+trackedItemExampleToothpaste =
+    { name = "Toothpaste"
+    , id = "2"
+    , purchases = [ purchaseExampleToothpaste1, purchaseExampleToothpaste2 ]
+    , isExpanded = False
+    }
+
+
+purchaseExampleToothpaste1 : Purchase
+purchaseExampleToothpaste1 =
+    { product_description = "Toothpaste with strawberry taste"
+    , purchased_date = "2021-01-01"
+    , purchased_amount = 1
+    , price = 10
+    , interval_to_previous = 0
+    }
+
+
+purchaseExampleToothpaste2 : Purchase
+purchaseExampleToothpaste2 =
+    { product_description = "Toothpaste"
+    , purchased_date = "2021-01-02"
+    , purchased_amount = 1
+    , price = 10
+    , interval_to_previous = 1
+    }
+
+
 init : Result Json.Decode.Error Flags -> Route () -> ( Model, Effect Msg )
 init flagsResult route =
-    ( { trackedItems = [] }
+    ( { trackedItems =
+            [ trackedItemExampleShampoo
+            , trackedItemExampleToothpaste
+            ]
+      }
     , Effect.none
     )
 
@@ -68,6 +130,25 @@ update route msg model =
             ( model
             , Effect.none
             )
+
+        Shared.Msg.ToggleTrackedItem trackedItemId ->
+            ( model |> toggleTrackedItem trackedItemId
+            , Effect.none
+            )
+
+
+toggleTrackedItem : String -> Model -> Model
+toggleTrackedItem id model =
+    let
+        toggleTrackedItemHelper : TrackedItem -> TrackedItem
+        toggleTrackedItemHelper ti =
+            if ti.id == id then
+                { ti | isExpanded = not ti.isExpanded }
+
+            else
+                ti
+    in
+    { model | trackedItems = List.map toggleTrackedItemHelper model.trackedItems }
 
 
 

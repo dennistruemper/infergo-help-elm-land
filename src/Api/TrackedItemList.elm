@@ -7,7 +7,8 @@ import Json.Decode.Pipeline exposing (optional, required)
 
 
 type alias TrackedItem =
-    { name : String
+    { id : String
+    , name : String
     , purchases : List Purchase
     }
 
@@ -42,6 +43,7 @@ decoder =
 trackedItemDecoder : Decoder TrackedItem
 trackedItemDecoder =
     succeed TrackedItem
+        |> required "id" string
         |> required "name" string
         |> optional "purchases" (list purchaseDecoder) []
 

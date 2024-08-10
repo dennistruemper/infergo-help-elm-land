@@ -3,7 +3,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 import Api
 import Api.TrackedItem
 import Api.TrackedItemList
-import Components.TrackedItem exposing (init, new)
+import Components.TrackedItemDennis
 import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Html exposing (Html)
@@ -18,12 +18,12 @@ import View exposing (View)
 
 
 page : Shared.Model -> Route () -> Page Model Msg
-page _ _ =
+page shared _ =
     Page.new
         { init = init
         , update = update
         , subscriptions = subscriptions
-        , view = view
+        , view = view shared
         }
 
 
@@ -73,7 +73,7 @@ type Msg
     | NewPurchaseInput Int PurchaseInputType String
     | TrackedItemCreated (Result Http.Error String)
     | TrackedItemApiResponded (Result Http.Error (List Api.TrackedItemList.TrackedItem))
-    | TrackedItemExpanded Components.TrackedItem.Msg
+    | TrackedItemExpandedToggled String -- item identifier
 
 
 type PurchaseInputType
@@ -187,13 +187,13 @@ update msg model =
         TrackedItemCreated (Err _) ->
             ( model, Effect.none )
 
-        TrackedItemExpanded innerMsg ->
-            ( model, Effect.none )
+        TrackedItemExpandedToggled trackedItemId ->
+            ( model, Effect.toggleTrackedItem trackedItemId )
 
 
 toSharedTrackedItem : Api.TrackedItemList.TrackedItem -> Shared.Model.TrackedItem
 toSharedTrackedItem apiTi =
-    Shared.Model.TrackedItem apiTi.name apiTi.purchases False
+    Shared.Model.TrackedItem apiTi.id apiTi.name apiTi.purchases False
 
 
 newPurchaseToApiPurchase : NewPurchase -> Api.TrackedItem.ApiPurchase
@@ -224,8 +224,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : Model -> View Msg
-view model =
+view : Shared.Model -> Model -> View Msg
+view shared model =
     { title = "Tracked Items"
     , body =
         [ Html.div
@@ -234,15 +234,7 @@ view model =
                 [ Html.div [ class "cell" ] []
                 , Html.div [ class "cell is-col-span-4 is-flex is-flex-direction-column" ]
                     [ Html.div []
-                        [ case model.trackedItems of
-                            Api.Loading ->
-                                Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Loading tracked items..." ]
-
-                            Api.Success trackedItems ->
-                                viewTrackedItems model trackedItems
-
-                            Api.Failure _ ->
-                                Html.span [ class "is-size-4 has-text-centered" ] [ Html.text "Something went wrong retrieving the tracked items" ]
+                        [ viewTrackedItems shared.trackedItems
                         ]
                     , viewCreateTrackedItemForm model
                     , Html.div [ class "is-flex is-justify-content-center" ] [ viewShowCreateFormButton ]
@@ -254,22 +246,9 @@ view model =
     }
 
 
-viewTrackedItems : Model -> List Shared.Model.TrackedItem -> Html Msg
-viewTrackedItems model ts =
+viewTrackedItems : List Shared.Model.TrackedItem -> Html Msg
+viewTrackedItems ts =
     let
-        singleTrackedItem : List Shared.Model.TrackedItem -> Shared.Model.TrackedItem
-        singleTrackedItem items =
-            if List.isEmpty items then
-                Shared.Model.TrackedItem "" [] False
-
-            else
-                case items.head of
-                    Just item ->
-                        item
-
-                    Nothing ->
-                        Shared.Model.TrackedItem "" [] False
-
         listView : Html Msg
         listView =
             if List.isEmpty ts then
@@ -277,8 +256,19 @@ viewTrackedItems model ts =
                     [ Html.h2 [ class "subtitle is-2 has-text-centered" ] [ Html.text "No tracked items yet! Ready to add one?" ] ]
 
             else
-                 Components.TrackedItem.new
-                 { model = 
+                Html.div []
+                    (List.map
+                        (\tsEntry ->
+                            Components.TrackedItemDennis.view
+                                { purchases = tsEntry |> .purchases
+                                , isExpanded = tsEntry |> .isExpanded
+                                , name = tsEntry |> .name
+                                , onFocus = TrackedItemExpandedToggled "todo nothing for now"
+                                , onClick = TrackedItemExpandedToggled tsEntry.id
+                                }
+                        )
+                        ts
+                    )
     in
     Html.div []
         [ Html.h1 [ class "title is-1 has-text-centered pt-5" ] [ Html.text "Tracked Items" ]
